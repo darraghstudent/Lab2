@@ -23,8 +23,5 @@ jobs:
       - name: Navigate to Subdirectory
         run: cd Lab2 && npm install  # Change this to your actual subdirectory path if needed
 
-      - name: Install dependencies
-        run: npm install
-
       - name: Run markdownlint
         run: npm test
