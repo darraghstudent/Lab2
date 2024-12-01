@@ -20,17 +20,11 @@ jobs:
         with:
           node-version: '16'
 
-      - name: Verify Node.js Version
-        run: node --version
+      - name: Install markdownlint-cli globally
+        run: npm install -g markdownlint-cli
 
-      - name: Navigate to Subdirectory
-        run: cd Lab2 && npm install  # Change this to your actual subdirectory path if needed
-
-      - name: Install markdownlint-cli globally 
-        run: npm install -g markdownlint-cli 
-     
-      - name: Install project dependencies 
+      - name: Install project dependencies
         run: npm install
 
       - name: Run markdownlint
-        run: markdownlint '**/*.md'
+        run: npm run lint
