@@ -33,4 +33,4 @@ jobs:
         run: npm install
 
       - name: Run markdownlint
-        run: markdownlint '**/*.md'
+        run: npm run lint
