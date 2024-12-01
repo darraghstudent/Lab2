@@ -1,14 +1,16 @@
 {
-  "name": "markdown-lint-test",
+  "name": "test-suite",
   "version": "1.0.0",
-  "description": "A project for testing markdown files using markdownlint-cli",
+  "description": "A project for testing with markdownlint-cli and Jest",
   "main": "index.js",
   "scripts": {
-    "test": "markdownlint '**/*.md'"
+    "test": "jest",
+    "lint": "markdownlint '**/*.md'"
   },
   "author": "Your Name",
   "license": "MIT",
   "devDependencies": {
+    "jest": "^27.0.0",
     "markdownlint-cli": "^0.29.0"
   }
 }
