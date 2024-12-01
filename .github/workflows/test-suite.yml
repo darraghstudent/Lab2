@@ -20,6 +20,9 @@ jobs:
         with:
           node-version: '16'
 
+      - name: Navigate to Subdirectory
+        run: cd Lab2 && npm install  # Change this to your actual subdirectory path if needed
+
       - name: Install dependencies
         run: npm install
 
