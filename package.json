@@ -1,0 +1,14 @@
+{
+  "name": "markdown-lint-test",
+  "version": "1.0.0",
+  "description": "A project for testing markdown files using markdownlint-cli",
+  "main": "index.js",
+  "scripts": {
+    "test": "markdownlint '**/*.md'"
+  },
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "markdownlint-cli": "^0.29.0"
+  }
+}
