@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "jest",
-    "lint": "markdownlint '**/*.md'"
+    "lint": "markdownlint 'Lab2/**/*.md'"
   },
   "author": "Your Name",
   "license": "MIT",
