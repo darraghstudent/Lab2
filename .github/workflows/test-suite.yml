@@ -1,4 +1,4 @@
-name: Markdown Lint Test Suite
+name: Markdown and Unit Tests
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  lint:
+  test:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,11 +20,11 @@ jobs:
         with:
           node-version: '16'
 
-      - name: Navigate to Subdirectory
-        run: cd Lab2 && npm install  # Change this to your actual subdirectory path if needed
-
       - name: Install dependencies
         run: npm install
 
-      - name: Run markdownlint
+      - name: Run unit tests
         run: npm test
+
+      - name: Run markdownlint
+        run: npm run lint
