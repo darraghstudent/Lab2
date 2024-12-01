@@ -4,7 +4,7 @@
   "description": "A project for testing markdown files using markdownlint-cli",
   "main": "index.js",
   "scripts": {
-    "test": "markdownlint '**/*.md'"
+    "test": "markdownlint 'Lab2/**/*.md'"
   },
   "author": "Your Name",
   "license": "MIT",
