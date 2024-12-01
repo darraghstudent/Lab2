@@ -1,4 +1,4 @@
-name: Run Tests
+name: Markdown Lint Test Suite
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  lint:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,5 +23,5 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Run a single test
-        run: npm test -- -t "Test 1 Lab2"
+      - name: Run markdownlint
+        run: npm test
