@@ -34,6 +34,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
 
+      # Check for CloudFormation Changes
       - name: Check for CloudFormation Changes
         run: |
           echo "Checking for CloudFormation changes..."
@@ -54,10 +55,10 @@ jobs:
             echo "Changes detected. Proceeding with deployment."
             echo "SKIP_DEPLOY=false" >> $GITHUB_ENV
           fi
-              
-      # Deploy CloudFormation Stack
+
+      # Deploy CloudFormation Stack (only if changes detected)
       - name: Deploy CloudFormation Main
-        if: ${{ env.SKIP_DEPLOY }} != 'true'  # Only runs if no-skip is set
+        if: ${{ env.SKIP_DEPLOY }} != 'true'
         uses: aws-actions/aws-cloudformation-github-deploy@v1.2.0
         with:
           name: ${{ env.AWS_CF_NAME_MAIN }}
