@@ -9,6 +9,7 @@ env:
   ARTIFACT_PATH: build-artifact
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_CF_NAME_MAIN: MyCloudFormationStack
+  AWS_CF_TEMPLATE_MAIN: cloudformation/templates/main.yml 
   DB_PASSWORD: ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
   run: echo "Database password is set and ready for secure use."
 
@@ -42,6 +43,7 @@ jobs:
             --change-set-name TempChangeSet \
             --capabilities CAPABILITY_NAMED_IAM \
             --query "Id" --output text || echo "NO_CHANGES")
+
 
           if [ "$CHANGESET" = "NO_CHANGES" ]; then
             echo "No changes detected. Skipping deployment."
