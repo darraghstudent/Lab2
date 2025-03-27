@@ -44,8 +44,7 @@ jobs:
             --change-set-name TempChangeSet \
             --capabilities CAPABILITY_NAMED_IAM \
             --query "Id" --output text || echo "NO_CHANGES")
-
-
+      
           if [ "$CHANGESET" = "NO_CHANGES" ]; then
             echo "No changes detected. Skipping deployment."
             echo "SKIP_DEPLOY=true" >> $GITHUB_ENV
