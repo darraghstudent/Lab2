@@ -33,6 +33,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-secret-db-password:  ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
 
       # Check for CloudFormation Changes
       - name: Check for CloudFormation Changes
@@ -61,6 +62,7 @@ jobs:
           name: ${{ env.AWS_CF_NAME_MAIN }}
           template: ${{ env.AWS_CF_TEMPLATE_MAIN }}
           capabilities: CAPABILITY_NAMED_IAM
+          parameters: DBPassword=${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }} # Passing the database password securely
 
   build-and-push-ecr:
     name: Build and Push Docker Image to ECR
