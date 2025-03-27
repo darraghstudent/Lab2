@@ -57,13 +57,14 @@ jobs:
               
       # Deploy CloudFormation Stack
       - name: Deploy CloudFormation Main
-        if: ${{ env.SKIP_DEPLOY }} != 'true'  # This ensures deployment is skipped if no changes were detected
+        if: ${{ env.SKIP_DEPLOY }} != 'true'  # Only runs if no-skip is set
         uses: aws-actions/aws-cloudformation-github-deploy@v1.2.0
-        with: 
+        with:
           name: ${{ env.AWS_CF_NAME_MAIN }}
           template: ${{ env.AWS_CF_TEMPLATE_MAIN }}
           capabilities: CAPABILITY_NAMED_IAM
           parameter-overrides: DBPassword=${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
+
       
 
   build-and-push-ecr:
