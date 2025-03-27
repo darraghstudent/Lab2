@@ -3,12 +3,8 @@ name: Build & Deploy
 on:
   push:
     branches: [ "main" ]
-    paths:
-      - '**/*.md'  # Trigger only for changes to .md files
   pull_request:
     branches: [ "main" ]
-    paths:
-      - '**/*.md'  # Trigger only for .md files in PRs
   workflow_dispatch:
 
 
