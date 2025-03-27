@@ -1,10 +1,16 @@
 name: Build & Deploy
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [ "main" ]
+    paths:
+      - '**/*.md'  # Trigger only for changes to .md files
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - '**/*.md'  # Trigger only for .md files in PRs
+  workflow_dispatch:
+
 
 jobs:
   configure-aws:
