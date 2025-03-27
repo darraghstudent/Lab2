@@ -35,25 +35,25 @@ jobs:
 
 
       - name: Check for CloudFormation Changes
-                run: |
-                  echo "Checking for CloudFormation changes..."
-                  CHANGESET=$(aws cloudformation create-change-set \
-                    --stack-name ${{ env.AWS_CF_NAME_MAIN }} \
-                    --template-body file://${{ env.AWS_CF_TEMPLATE_MAIN }} \
-                    --change-set-name TempChangeSet \
-                    --capabilities CAPABILITY_NAMED_IAM \
-                    --query "Id" --output text || echo "NO_CHANGES")
-              
-                  echo "ChangeSet Result: $CHANGESET"
-              
-                  if [ "$CHANGESET" = "NO_CHANGES" ]; then
-                    echo "No changes detected. Skipping deployment."
-                    echo "SKIP_DEPLOY=true" >> $GITHUB_ENV
-                    exit 0
-                  else
-                    echo "Changes detected. Proceeding with deployment."
-                    echo "SKIP_DEPLOY=false" >> $GITHUB_ENV
-                  fi
+        run: |
+          echo "Checking for CloudFormation changes..."
+          CHANGESET=$(aws cloudformation create-change-set \
+            --stack-name ${{ env.AWS_CF_NAME_MAIN }} \
+            --template-body file://${{ env.AWS_CF_TEMPLATE_MAIN }} \
+            --change-set-name TempChangeSet \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --query "Id" --output text || echo "NO_CHANGES")
+
+          echo "ChangeSet Result: $CHANGESET"
+
+          if [ "$CHANGESET" = "NO_CHANGES" ]; then
+            echo "No changes detected. Skipping deployment."
+            echo "SKIP_DEPLOY=true" >> $GITHUB_ENV
+            exit 0
+          else
+            echo "Changes detected. Proceeding with deployment."
+            echo "SKIP_DEPLOY=false" >> $GITHUB_ENV
+          fi
               
       # Deploy CloudFormation Stack
       - name: Deploy CloudFormation Main
