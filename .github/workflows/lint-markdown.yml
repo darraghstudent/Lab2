@@ -2,11 +2,11 @@ name: Lint Markdown Files
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "dev" ]
     paths:
       - '**/*.md'  # Trigger only for changes to .md files
   pull_request:
-    branches: [ "main" ]
+    branches: [ "dev" ]
     paths:
       - '**/*.md'  # Trigger only for .md files in PRs
   workflow_dispatch:
