@@ -8,6 +8,7 @@ env:
   ARTIFACT_NAME: StudioGhibliMM-dev
   ARTIFACT_PATH: build-artifact
   AWS_REGION: ${{ secrets.AWS_REGION }}
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
   AWS_CF_NAME_MAIN: MyCloudFormationStack
   AWS_CF_TEMPLATE_MAIN: cloudformation/templates/main.yml 
   DB_PASSWORD: ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
