@@ -35,12 +35,9 @@ jobs:
 
 
       - name: Check for CloudFormation Changes
+        id: check-changes
         run: |
           echo "Checking for CloudFormation changes..."
-          echo "Template Path: ${{ env.AWS_CF_TEMPLATE_MAIN }}"
-          echo "Stack Name: ${{ env.AWS_CF_NAME_MAIN }}"
-          echo "Region: ${{ env.AWS_REGION }}"
-          
           CHANGESET=$(aws cloudformation create-change-set \
             --stack-name ${{ env.AWS_CF_NAME_MAIN }} \
             --template-body file://${{ env.AWS_CF_TEMPLATE_MAIN }} \
@@ -58,10 +55,9 @@ jobs:
             echo "Changes detected. Proceeding with deployment."
             echo "SKIP_DEPLOY=false" >> $GITHUB_ENV
           fi
-
-      # Deploy CloudFormation Stack (only if changes detected)
+          
       - name: Deploy CloudFormation Main
-        if: ${{ env.SKIP_DEPLOY }} != 'true'
+        if: ${{ env.SKIP_DEPLOY }} != 'true'  # Skip if no changes detected
         uses: aws-actions/aws-cloudformation-github-deploy@v1.2.0
         with:
           name: ${{ env.AWS_CF_NAME_MAIN }}
