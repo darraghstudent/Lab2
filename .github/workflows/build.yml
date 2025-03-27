@@ -12,7 +12,6 @@ env:
   AWS_CF_NAME_MAIN: MyCloudFormationStack
   AWS_CF_TEMPLATE_MAIN: cloudformation/templates/main.yml 
   DB_PASSWORD: ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
-  run: echo "Database password is set and ready for secure use."
 
 
 
@@ -34,34 +33,45 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      # Check for CloudFormation Changes
-      - name: Check for CloudFormation Changes
-        run: |
-          echo "Checking for CloudFormation changes..."
-          CHANGESET=$(aws cloudformation create-change-set \
-            --stack-name ${{ env.AWS_CF_NAME_MAIN }} \
-            --template-body file://${{ env.AWS_CF_TEMPLATE_MAIN }} \
-            --change-set-name TempChangeSet \
-            --capabilities CAPABILITY_NAMED_IAM \
-            --query "Id" --output text || echo "NO_CHANGES")
-      
-          if [ "$CHANGESET" = "NO_CHANGES" ]; then
-            echo "No changes detected. Skipping deployment."
-            echo "SKIP_DEPLOY=true" >> $GITHUB_ENV
-            exit 0
-          else
-            echo "Changes detected. Proceeding with deployment."
-          fi
 
+      - name: Check for CloudFormation Changes
+                run: |
+                  echo "Checking for CloudFormation changes..."
+                  CHANGESET=$(aws cloudformation create-change-set \
+                    --stack-name ${{ env.AWS_CF_NAME_MAIN }} \
+                    --template-body file://${{ env.AWS_CF_TEMPLATE_MAIN }} \
+                    --change-set-name TempChangeSet \
+                    --capabilities CAPABILITY_NAMED_IAM \
+                    --query "Id" --output text || echo "NO_CHANGES")
+              
+                  echo "ChangeSet Result: $CHANGESET"
+              
+                  if [ "$CHANGESET" = "NO_CHANGES" ]; then
+                    echo "No changes detected. Skipping deployment."
+                    echo "SKIP_DEPLOY=true" >> $GITHUB_ENV
+                    exit 0
+                  else
+                    echo "Changes detected. Proceeding with deployment."
+                    echo "SKIP_DEPLOY=false" >> $GITHUB_ENV
+                  fi
+              
       # Deploy CloudFormation Stack
       - name: Deploy CloudFormation Main
-        if: ${{ env.SKIP_DEPLOY }} == 'false'
+        if: ${{ env.SKIP_DEPLOY }} != 'true'  # This ensures deployment is skipped if no changes were detected
         uses: aws-actions/aws-cloudformation-github-deploy@v1.2.0
         with: 
           name: ${{ env.AWS_CF_NAME_MAIN }}
           template: ${{ env.AWS_CF_TEMPLATE_MAIN }}
           capabilities: CAPABILITY_NAMED_IAM
-          parameter-overrides: DBPassword=${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}  # Passing the database password securely
+          parameter-overrides: DBPassword=${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
+      
+        build-and-push-ecr:
+          name: Build and Push Docker Image to ECR
+          needs: build
+          runs-on: ubuntu-latest
+          steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v3
 
   build-and-push-ecr:
     name: Build and Push Docker Image to ECR
