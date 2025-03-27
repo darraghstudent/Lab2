@@ -21,21 +21,20 @@ jobs:
     environment: Staging
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
       # https://github.com/aws-actions/configure-aws-credentials
       - name: Set Up AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4.1.0
+        uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: ${{ env.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
 
       - name: Check for CloudFormation Changes
-        id: check-changes
         run: |
           echo "Checking for CloudFormation changes..."
           CHANGESET=$(aws cloudformation create-change-set \
@@ -50,14 +49,14 @@ jobs:
           if [ "$CHANGESET" = "NO_CHANGES" ]; then
             echo "No changes detected. Skipping deployment."
             echo "SKIP_DEPLOY=true" >> $GITHUB_ENV
-            exit 0
           else
             echo "Changes detected. Proceeding with deployment."
             echo "SKIP_DEPLOY=false" >> $GITHUB_ENV
           fi
+          exit 0
           
       - name: Deploy CloudFormation Main
-        if: ${{ env.SKIP_DEPLOY }} != 'true'  # Skip if no changes detected
+        if: env.SKIP_DEPLOY != 'true'
         uses: aws-actions/aws-cloudformation-github-deploy@v1.2.0
         with:
           name: ${{ env.AWS_CF_NAME_MAIN }}
@@ -129,7 +128,7 @@ jobs:
 
       # Update ECS Service
       - name: Update ECS Service
-        if: ${{ env.SKIP_DEPLOY }} == 'false'
+        if: env.SKIP_DEPLOY == 'false'
         run: |
           echo "Registering new Task Definition revision..."
           TASK_DEFINITION_ARN=$(aws ecs register-task-definition \
