@@ -11,6 +11,8 @@ env:
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
   AWS_CF_NAME_MAIN: MyCloudFormationStack
   AWS_CF_TEMPLATE_MAIN: cloudformation/templates/main.yml 
+  TASK_DEF_FILE: cloudformation/templates/Task_def.yml
+
   DB_PASSWORD: ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
 
 
@@ -81,9 +83,9 @@ jobs:
           sudo apt update
           sudo apt install python3
 
-      - name: convert_yaml_to_json
+      - name: Convert YAML to JSON
         run: |
-          python -c "import yaml, json, sys; print(json.dumps(yaml.safe_load(open('cloudformation/templates/Task_def.yml'))))" > Task_def.json
+          python -c "import yaml, json, sys; print(json.dumps(yaml.safe_load(open('${{ env.TASK_DEF_FILE }}'))))" > Task_def.json
       
       # Deploy Task Definition
       - name: Deploy Task Definition
