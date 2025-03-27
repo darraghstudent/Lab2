@@ -9,7 +9,10 @@ env:
   ARTIFACT_PATH: build-artifact
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_CF_NAME_MAIN: MyCloudFormationStack
-  AWS_CF_TEMPLATE_MAIN: cloudformation/templates/main.yml
+  DB_PASSWORD: ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
+  run: echo "Database password is set and ready for secure use."
+
+
 
 jobs:
   build:
@@ -28,7 +31,6 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-secret-db-password:  ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
 
       # Check for CloudFormation Changes
       - name: Check for CloudFormation Changes
