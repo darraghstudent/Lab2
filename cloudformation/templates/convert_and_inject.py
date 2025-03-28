@@ -31,7 +31,8 @@ def convert_keys_to_ecs_case(data):
         "LogConfiguration": "logConfiguration",
         "LogDriver": "logDriver",
         "Options": "options",
-        "Essential": "essential"
+        "Essential": "essential",
+        "Image": "image"
     }
     
     if isinstance(data, dict):
