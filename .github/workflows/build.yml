@@ -11,7 +11,7 @@ env:
   AWS_ECS_CLUSTER_NAME: Mycluster
   AWS_ECS_SERVICE_NAME: Myservice
   AWS_CF_NAME_MAIN: MyCloudFormationStack
-  AWS_CF_TEMPLATE_MAIN: cloudformation/templates/main.yml 
+  AWS_CF_TEMPLATE_MAIN: cloudformation/templates/main.yml
   TASK_DEF_FILE: cloudformation/templates/Task_def.yml
   DB_PASSWORD: ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
 
@@ -84,6 +84,22 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Validate Exported Values
+        run: |
+          echo "Validating exported values..."
+          VPC_ID=$(aws cloudformation list-exports --query "Exports[?Name=='MyVPCID'].Value" --output text)
+          TASK_EXEC_ROLE=$(aws cloudformation list-exports --query "Exports[?Name=='TaskExecutionRoleArn'].Value" --output text)
+          SUBNET_ID=$(aws cloudformation list-exports --query "Exports[?Name=='PublicSubnetId'].Value" --output text)
+
+          if [ -z "$VPC_ID" ] || [ -z "$TASK_EXEC_ROLE" ] || [ -z "$SUBNET_ID" ]; then
+            echo "One or more exported values are missing! Exiting..."
+            exit 1
+          fi
+
+          echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
+          echo "TASK_EXEC_ROLE=$TASK_EXEC_ROLE" >> $GITHUB_ENV
+          echo "SUBNET_ID=$SUBNET_ID" >> $GITHUB_ENV
+
       - name: Install Python
         run: |
           sudo apt update
@@ -97,6 +113,9 @@ jobs:
         env:
           DB_PASSWORD: ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
           TASK_DEF_FILE: cloudformation/templates/Task_def.yml
+          VPC_ID: ${{ env.VPC_ID }}
+          TASK_EXEC_ROLE: ${{ env.TASK_EXEC_ROLE }}
+          SUBNET_ID: ${{ env.SUBNET_ID }}
         run: |
           python cloudformation/templates/convert_and_inject.py
 
@@ -110,7 +129,7 @@ jobs:
         run: |
           echo "Updating ECS Service..."
           TASK_DEFINITION_ARN=$(aws ecs describe-task-definition \
-            --task-definition ${{ secrets.ECS_TASK_DEFINITION_NAME }} --query 'taskDefinition.taskDefinitionArn' --output text)
+            --task-definition ${{ env.ARTIFACT_NAME }} --query 'taskDefinition.taskDefinitionArn' --output text)
           aws ecs update-service \
             --cluster ${{ env.AWS_ECS_CLUSTER_NAME }} \
             --service ${{ env.AWS_ECS_SERVICE_NAME }} \
