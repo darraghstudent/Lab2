@@ -9,14 +9,32 @@ def custom_constructor(loader, tag_suffix, node):
 # Add support for !ImportValue
 yaml.add_multi_constructor('!', custom_constructor, Loader=yaml.FullLoader)
 
-def convert_keys_to_lowercase(data):
+def convert_keys_to_ecs_case(data):
     """
-    Recursively converts all keys in a dictionary to lowercase.
+    Recursively converts keys to the exact case required by AWS ECS CLI.
     """
+    ecs_case_mapping = {
+        "Family": "family",
+        "NetworkMode": "networkMode",
+        "RequiresCompatibilities": "requiresCompatibilities",
+        "Cpu": "cpu",
+        "Memory": "memory",
+        "ExecutionRoleArn": "executionRoleArn",
+        "TaskRoleArn": "taskRoleArn",
+        "ContainerDefinitions": "containerDefinitions",
+        "Environment": "environment",
+        "Name": "name",
+        "Value": "value",
+        "PortMappings": "portMappings",
+        "LogConfiguration": "logConfiguration",
+        "Options": "options",
+        "Essential": "essential"
+    }
+    
     if isinstance(data, dict):
-        return {key.lower(): convert_keys_to_lowercase(value) for key, value in data.items()}
+        return {ecs_case_mapping.get(key, key): convert_keys_to_ecs_case(value) for key, value in data.items()}
     elif isinstance(data, list):
-        return [convert_keys_to_lowercase(item) for item in data]
+        return [convert_keys_to_ecs_case(item) for item in data]
     else:
         return data
 
@@ -32,13 +50,13 @@ def convert_and_inject(task_def_file, output_file):
     if not task_definition:
         raise ValueError("Task definition is missing or incorrectly formatted.")
 
-    # Convert all keys in the TaskDefinition to lowercase
-    ecs_task_def = convert_keys_to_lowercase(task_definition)
+    # Convert keys to ECS-specific case
+    ecs_task_def = convert_keys_to_ecs_case(task_definition)
 
     # Replace placeholders with actual environment variables dynamically
-    for container in ecs_task_def.get("containerdefinitions", []):  # Note: lowercase
-        for env_var in container.get("environment", []):  # Note: lowercase
-            name = env_var.get("name")  # Note: lowercase
+    for container in ecs_task_def.get("containerDefinitions", []):  # Note: PascalCase preserved
+        for env_var in container.get("environment", []):  # Note: PascalCase preserved
+            name = env_var.get("name")
             if name == "db_password":
                 env_var["value"] = os.getenv("DB_PASSWORD", "default-password")  # GitHub Secret or default
             elif name == "vpc_id":
@@ -58,10 +76,6 @@ def convert_and_inject(task_def_file, output_file):
     with open(output_file, 'w') as json_file:
         json.dump(ecs_task_def, json_file, indent=2)
 
-if __name__ == "__main__":
-    task_def_file = os.getenv('TASK_DEF_FILE', 'cloudformation/templates/Task_def.yml')
-    output_file = 'Task_def.json'
-    convert_and_inject(task_def_file, output_file)
 if __name__ == "__main__":
     task_def_file = os.getenv('TASK_DEF_FILE', 'cloudformation/templates/Task_def.yml')
     output_file = 'Task_def.json'
