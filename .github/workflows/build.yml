@@ -119,6 +119,12 @@ jobs:
         run: |
           python cloudformation/templates/convert_and_inject.py
 
+      - name: Validate and Debug Task Definition JSON
+        run: |
+          echo "Validating Task_def.json..."
+          cat Task_def.json
+    
+
       - name: Deploy Task Definition
         run: |
           echo "Enabling debug mode for ECS task definition registration..."
