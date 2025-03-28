@@ -95,7 +95,7 @@ jobs:
 
       - name: Convert YAML to JSON
         run: |
-          python cloudformation/templates/YAMLtoJSON.py
+          python cloudformation/templates/YMLtoJSON.py
 
       - name: Deploy Task Definition
         run: |
