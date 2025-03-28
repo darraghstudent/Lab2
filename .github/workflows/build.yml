@@ -8,8 +8,8 @@ env:
   ARTIFACT_PATH: build-artifact
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-  AWS_ECS_CLUSTER_NAME: ${{ secrets.AWS_ECS_CLUSTER_NAME }}
-  AWS_ECS_SERVICE_NAME: ${{ secrets.AWS_ECS_SERVICE_NAME }}
+  AWS_ECS_CLUSTER_NAME: Mycluster
+  AWS_ECS_SERVICE_NAME: Myservice
   AWS_CF_NAME_MAIN: MyCloudFormationStack
   AWS_CF_TEMPLATE_MAIN: cloudformation/templates/main.yml 
   TASK_DEF_FILE: cloudformation/templates/Task_def.yml
@@ -112,6 +112,6 @@ jobs:
           TASK_DEFINITION_ARN=$(aws ecs describe-task-definition \
             --task-definition ${{ secrets.ECS_TASK_DEFINITION_NAME }} --query 'taskDefinition.taskDefinitionArn' --output text)
           aws ecs update-service \
-            --cluster ${{ secrets.AWS_ECS_CLUSTER_NAME }} \
-            --service ${{ secrets.AWS_ECS_SERVICE_NAME }} \
+            --cluster ${{ env.AWS_ECS_CLUSTER_NAME }} \
+            --service ${{ env.AWS_ECS_SERVICE_NAME }} \
             --task-definition $TASK_DEFINITION_ARN
