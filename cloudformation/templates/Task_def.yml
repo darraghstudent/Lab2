@@ -80,7 +80,6 @@ Resources:
           SecurityGroups:
             - !Ref MySecurityGroup
           AssignPublicIp: 'ENABLED'
-          AssignPublicIp: 'ENABLED'
 
 
 
