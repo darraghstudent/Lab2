@@ -3,38 +3,40 @@ name: Build & Deploy to Staging
 on:
   workflow_dispatch:
 
-
 env:
   ARTIFACT_NAME: StudioGhibliMM-dev
   ARTIFACT_PATH: build-artifact
   AWS_REGION: ${{ secrets.AWS_REGION }}
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+  AWS_ECS_CLUSTER_NAME: MyClusterstack
+  AWS_ECS_SERVICE_NAME: MyServiceName
   AWS_CF_NAME_MAIN: MyCloudFormationStack
   AWS_CF_TEMPLATE_MAIN: cloudformation/templates/main.yml 
   TASK_DEF_FILE: cloudformation/templates/Task_def.yml
-
   DB_PASSWORD: ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
-
-
 
 jobs:
   build:
     runs-on: ubuntu-latest
     environment: Staging
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
-      # https://github.com/aws-actions/configure-aws-credentials
+      steps:
+        - name: Set Environment Variables
+          run: |
+            echo "TASK_DEF_FILE=cloudformation/templates/Task_def.yml" >> $GITHUB_ENV
+            echo "DB_PASSWORD=${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}" >> $GITHUB_ENV
+  
+        - name: Checkout Repository
+          uses: actions/checkout@v3
+          with:
+            fetch-depth: 0
+
       - name: Set Up AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-region: ${{ env.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
 
       - name: Check for CloudFormation Changes
         run: |
@@ -56,7 +58,7 @@ jobs:
             echo "SKIP_DEPLOY=false" >> $GITHUB_ENV
           fi
           exit 0
-          
+
       - name: Deploy CloudFormation Main
         if: env.SKIP_DEPLOY != 'true'
         uses: aws-actions/aws-cloudformation-github-deploy@v1.2.0
@@ -66,8 +68,6 @@ jobs:
           capabilities: CAPABILITY_NAMED_IAM
           parameter-overrides: DBPassword=${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
 
-      
-
   deploy-task:
     name: Deploy ECS Service
     runs-on: ubuntu-latest
@@ -75,14 +75,13 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # Ensure all files are fetched
+          fetch-depth: 0
 
       - name: Set Up AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v3
         with:
+          aws-region: ${{ env.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Install Python
         run: |
@@ -93,19 +92,32 @@ jobs:
         run: |
           pip install PyYAML
 
-      - name: Convert YAML to JSON
+      - name: Inject Environment Variables into Task Definition
         run: |
-          python cloudformation/templates/YMLtoJSON.py
+          python3 -c "
+import yaml, json, os
+with open('${{ env.TASK_DEF_FILE }}', 'r') as f:
+    task_def = yaml.safe_load(f)
+    for container in task_def['containerDefinitions']:
+        container['environment'] = [
+            {'name': 'DB_PASSWORD', 'value': os.getenv('DB_PASSWORD')}
+        ]
+    with open('Task_def.json', 'w') as json_file:
+        json.dump(task_def, json_file, indent=2)
+          "
 
       - name: Deploy Task Definition
         run: |
           aws ecs register-task-definition \
             --cli-input-json file://Task_def.json
 
-      # Update ECS Service
       - name: Update ECS Service
         if: env.SKIP_DEPLOY == 'false'
         run: |
-          echo "Registering new Task Definition revision..."
-          TASK_DEFINITION_ARN=$(aws ecs register-task-definition \
-            --cli-input-json file://Task_def.json \
+          echo "Updating ECS Service..."
+          TASK_DEFINITION_ARN=$(aws ecs describe-task-definition \
+            --task-definition ${{ env.ARTIFACT_NAME }} --query 'taskDefinition.taskDefinitionArn' --output text)
+          aws ecs update-service \
+            --cluster ${{ env.AWS_ECS_CLUSTER_NAME }} \
+            --service ${{ env.AWS_ECS_SERVICE_NAME }} \
+            --task-definition $TASK_DEFINITION_ARN
