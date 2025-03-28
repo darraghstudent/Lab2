@@ -11,7 +11,7 @@ env:
   AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
   AWS_CF_NAME_MAIN: MyCloudFormationStack
   AWS_CF_TEMPLATE_MAIN: cloudformation/templates/main.yml 
-  TASK_DEF_FILE: cloudformation/templates/Task_def.yml
+  TASK_DEF_FILE: ./cloudformation/templates/Task_def.yml
 
   DB_PASSWORD: ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
 
