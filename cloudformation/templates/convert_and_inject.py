@@ -28,9 +28,12 @@ def convert_and_inject(task_def_file, output_file):
     # Extract the TaskDefinition resource from the CloudFormation template
     task_definition = cf_template.get("Resources", {}).get("FlaskAppTaskDefinition", {}).get("Properties", {})
 
+    # Validate the task_definition dictionary
+    if not task_definition:
+        raise ValueError("Task definition is missing or incorrectly formatted.")
 
-    # Convert all keys in the ECS task definition to lowercase
-    ecs_task_def = convert_keys_to_lowercase(ecs_task_def)
+    # Convert all keys in the TaskDefinition to lowercase
+    ecs_task_def = convert_keys_to_lowercase(task_definition)
 
     # Replace placeholders with actual environment variables dynamically
     for container in ecs_task_def.get("containerdefinitions", []):  # Note: lowercase
@@ -55,6 +58,10 @@ def convert_and_inject(task_def_file, output_file):
     with open(output_file, 'w') as json_file:
         json.dump(ecs_task_def, json_file, indent=2)
 
+if __name__ == "__main__":
+    task_def_file = os.getenv('TASK_DEF_FILE', 'cloudformation/templates/Task_def.yml')
+    output_file = 'Task_def.json'
+    convert_and_inject(task_def_file, output_file)
 if __name__ == "__main__":
     task_def_file = os.getenv('TASK_DEF_FILE', 'cloudformation/templates/Task_def.yml')
     output_file = 'Task_def.json'
