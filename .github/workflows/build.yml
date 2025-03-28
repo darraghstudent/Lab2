@@ -67,21 +67,7 @@ jobs:
           parameter-overrides: DBPassword=${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
 
       
-  deploy-task:
-    name: Deploy ECS Service
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set Up AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v3
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-    
-      - name: Checkout Repository
-        uses: actions/checkout@v3
 
-jobs:
   deploy-task:
     name: Deploy ECS Service
     runs-on: ubuntu-latest
@@ -123,6 +109,3 @@ jobs:
           echo "Registering new Task Definition revision..."
           TASK_DEFINITION_ARN=$(aws ecs register-task-definition \
             --cli-input-json file://Task_def.json \
-            --query "taskDefinition.taskDefinitionArn" --output text)
-
-          echo "Updating ECS Service to use new Task Definition..."
