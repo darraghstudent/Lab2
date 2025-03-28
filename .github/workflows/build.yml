@@ -83,6 +83,18 @@ jobs:
           sudo apt update
           sudo apt install python3
 
+      - name: Debug Workspace and File Paths
+        run: |
+          echo "Current working directory:"
+          pwd
+          echo "Listing files in the workspace:"
+          ls -la
+          echo "Listing files in cloudformation/templates:"
+          ls -la cloudformation/templates
+
+
+
+
       - name: Convert YAML to JSON
         run: |
           python -c "import yaml, json, sys; print(json.dumps(yaml.safe_load(open('${{ env.TASK_DEF_FILE }}'))))" > Task_def.json
