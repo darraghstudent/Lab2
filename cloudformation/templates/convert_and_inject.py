@@ -26,7 +26,10 @@ def convert_keys_to_ecs_case(data):
         "Name": "name",
         "Value": "value",
         "PortMappings": "portMappings",
+        "ContainerPort": "containerPort",
+        "Protocol": "protocol",
         "LogConfiguration": "logConfiguration",
+        "LogDriver": "logDriver",
         "Options": "options",
         "Essential": "essential"
     }
@@ -75,6 +78,11 @@ def convert_and_inject(task_def_file, output_file):
     # Write the final ECS task definition to a JSON file
     with open(output_file, 'w') as json_file:
         json.dump(ecs_task_def, json_file, indent=2)
+
+if __name__ == "__main__":
+    task_def_file = os.getenv('TASK_DEF_FILE', 'cloudformation/templates/Task_def.yml')
+    output_file = 'Task_def.json'
+    convert_and_inject(task_def_file, output_file)
 
 if __name__ == "__main__":
     task_def_file = os.getenv('TASK_DEF_FILE', 'cloudformation/templates/Task_def.yml')
