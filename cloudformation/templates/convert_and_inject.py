@@ -14,13 +14,19 @@ def convert_and_inject(task_def_file, output_file):
     with open(task_def_file, 'r') as yaml_file:
         task_def = yaml.load(yaml_file, Loader=yaml.FullLoader)
 
-    # Replace the 'DB_PASSWORD' placeholder with the actual secret value
+    # Replace placeholders with actual environment variables
     for container in task_def.get('ContainerDefinitions', []):
         for env_var in container.get('Environment', []):
             if env_var.get('Name') == 'DB_PASSWORD':
                 env_var['Value'] = os.getenv('DB_PASSWORD')  # Using GitHub Secret via the environment
+            elif env_var.get('Name') == 'VPC_ID':
+                env_var['Value'] = os.getenv('VPC_ID')  # Inject VPC_ID
+            elif env_var.get('Name') == 'TASK_EXEC_ROLE_ARN':
+                env_var['Value'] = os.getenv('TASK_EXEC_ROLE')  # Inject Task Execution Role ARN
+            elif env_var.get('Name') == 'SUBNET_ID':
+                env_var['Value'] = os.getenv('SUBNET_ID')  # Inject Subnet ID
 
-    # Convert to JSON and save it
+    # Convert to JSON and save the updated file
     with open(output_file, 'w') as json_file:
         json.dump(task_def, json_file, indent=2)
 
