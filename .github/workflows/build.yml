@@ -123,13 +123,37 @@ jobs:
         run: |
           echo "Validating Task_def.json..."
           cat Task_def.json
+
+      - name: Debug Exported Values
+        run: |
+          echo "Validating exported values..."
+          VPC_ID=$(aws cloudformation list-exports --query "Exports[?Name=='MyVPCID'].Value" --output text)
+          TASK_EXEC_ROLE=$(aws cloudformation list-exports --query "Exports[?Name=='TaskExecutionRoleArn'].Value" --output text)
+          SUBNET_ID=$(aws cloudformation list-exports --query "Exports[?Name=='PublicSubnetId'].Value" --output text)
+
+          if [ -z "$VPC_ID" ] || [ -z "$TASK_EXEC_ROLE" ] || [ -z "$SUBNET_ID" ]; then
+            echo "One or more exported values are missing! Exiting..."
+            exit 1
+          fi
+
+          echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
+          echo "TASK_EXEC_ROLE=$TASK_EXEC_ROLE" >> $GITHUB_ENV
+          echo "SUBNET_ID=$SUBNET_ID" >> $GITHUB_ENV
+
+      - name: Verify AWS Identity
+        run: aws sts get-caller-identity
+
+      - name: Validate and Debug Task Definition JSON
+        run: |
+          echo "Validating Task_def.json..."
+          jq empty Task_def.json || echo "Invalid JSON structure"
+          cat Task_def.json
     
 
       - name: Deploy Task Definition
         run: |
           echo "Enabling debug mode for ECS task definition registration..."
-          aws ecs register-task-definition \
-            --cli-input-json file://Task_def.json --debug
+          aws ecs register-task-definition --region ${{ env.AWS_REGION }} --cli-input-json file://Task_def.json --debug
 
       - name: Update ECS Service
         if: ${{ env.SKIP_DEPLOY != 'true' }}
