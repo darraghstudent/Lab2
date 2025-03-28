@@ -10,25 +10,51 @@ def custom_constructor(loader, tag_suffix, node):
 yaml.add_multi_constructor('!', custom_constructor, Loader=yaml.FullLoader)
 
 def convert_and_inject(task_def_file, output_file):
-    # Load the YAML file
+    # Load the YAML file (assumes CloudFormation-style input)
     with open(task_def_file, 'r') as yaml_file:
-        task_def = yaml.load(yaml_file, Loader=yaml.FullLoader)
+        cf_template = yaml.load(yaml_file, Loader=yaml.FullLoader)
 
-    # Replace placeholders with actual environment variables
-    for container in task_def.get('ContainerDefinitions', []):
-        for env_var in container.get('Environment', []):
-            if env_var.get('Name') == 'DB_PASSWORD':
-                env_var['Value'] = os.getenv('DB_PASSWORD')  # Using GitHub Secret via the environment
-            elif env_var.get('Name') == 'VPC_ID':
-                env_var['Value'] = os.getenv('VPC_ID')  # Inject VPC_ID
-            elif env_var.get('Name') == 'TASK_EXEC_ROLE_ARN':
-                env_var['Value'] = os.getenv('TASK_EXEC_ROLE')  # Inject Task Execution Role ARN
-            elif env_var.get('Name') == 'SUBNET_ID':
-                env_var['Value'] = os.getenv('SUBNET_ID')  # Inject Subnet ID
+    # Extract the TaskDefinition resource from the CloudFormation template
+    task_definition = cf_template.get("Resources", {}).get("FlaskAppTaskDefinition", {}).get("Properties", {})
 
-    # Convert to JSON and save the updated file
+    # Ensure required ECS fields exist
+    if "Family" not in task_definition or "ContainerDefinitions" not in task_definition:
+        raise ValueError("Task definition is missing required fields: 'Family' or 'ContainerDefinitions'")
+
+    # Transform fields to match ECS CLI expectations
+    ecs_task_def = {
+        "family": task_definition.get("Family"),
+        "networkMode": task_definition.get("NetworkMode", "awsvpc"),
+        "requiresCompatibilities": task_definition.get("RequiresCompatibilities", []),
+        "cpu": task_definition.get("Cpu"),
+        "memory": task_definition.get("Memory"),
+        "executionRoleArn": task_definition.get("ExecutionRoleArn"),
+        "taskRoleArn": task_definition.get("TaskRoleArn"),
+        "containerDefinitions": task_definition.get("ContainerDefinitions", [])
+    }
+
+    # Replace placeholders with actual environment variables dynamically
+    for container in ecs_task_def["containerDefinitions"]:
+        for env_var in container.get("Environment", []):
+            name = env_var.get("Name")
+            if name == "DB_PASSWORD":
+                env_var["Value"] = os.getenv("DB_PASSWORD", "default-password")  # GitHub Secret or default
+            elif name == "VPC_ID":
+                env_var["Value"] = os.getenv("VPC_ID", "")
+            elif name == "TASK_EXEC_ROLE_ARN":
+                env_var["Value"] = os.getenv("TASK_EXEC_ROLE", "")
+            elif name == "SUBNET_ID":
+                env_var["Value"] = os.getenv("SUBNET_ID", "")
+            elif name == "AWS_REGION":
+                env_var["Value"] = os.getenv("AWS_REGION", "us-west-1")  # Default region if not set
+            elif name == "DB_HOST":
+                env_var["Value"] = os.getenv("DB_HOST", "localhost")  # Default host if not set
+            elif name == "DB_PORT":
+                env_var["Value"] = os.getenv("DB_PORT", "5432")  # Default port if not set
+
+    # Write the final ECS task definition to a JSON file
     with open(output_file, 'w') as json_file:
-        json.dump(task_def, json_file, indent=2)
+        json.dump(ecs_task_def, json_file, indent=2)
 
 if __name__ == "__main__":
     task_def_file = os.getenv('TASK_DEF_FILE', 'cloudformation/templates/Task_def.yml')
