@@ -121,8 +121,9 @@ jobs:
 
       - name: Deploy Task Definition
         run: |
+          echo "Enabling debug mode for ECS task definition registration..."
           aws ecs register-task-definition \
-            --cli-input-json file://Task_def.json
+            --cli-input-json file://Task_def.json --debug
 
       - name: Update ECS Service
         if: ${{ env.SKIP_DEPLOY != 'true' }}
@@ -133,4 +134,5 @@ jobs:
           aws ecs update-service \
             --cluster ${{ env.AWS_ECS_CLUSTER_NAME }} \
             --service ${{ env.AWS_ECS_SERVICE_NAME }} \
+            --task-definition $TASK_DEFINITION_ARN
             --task-definition $TASK_DEFINITION_ARN
