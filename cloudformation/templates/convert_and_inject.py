@@ -75,7 +75,7 @@ def convert_and_inject(task_def_file, output_file):
                 env_var["value"] = os.getenv("ECS_CLUSTER", "")
             elif name == "ECRRepositoryURI":
                 env_var["value"] = os.getenv("ECR_REPOSITORY", "")
-            elif name == "MyTaskExecutionRoleExportName  ":
+            elif name == "MyTaskExecutionRoleExportName":
                 env_var["value"] = os.getenv("TASK_ROLE", "")
      
 
