@@ -24,6 +24,7 @@ jobs:
     steps:
       - name: Set Environment Variables
         run: |
+          echo "Setting environment variables for build job..."
           echo "TASK_DEF_FILE=cloudformation/templates/Task_def.yml" >> $GITHUB_ENV
           echo "DB_PASSWORD=${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}" >> $GITHUB_ENV
   
@@ -56,7 +57,7 @@ jobs:
             echo "Changes detected. Proceeding with deployment."
             echo "SKIP_DEPLOY=false" >> $GITHUB_ENV
           fi
-          exit 0
+
       - name: Deploy CloudFormation Main
         if: ${{ env.SKIP_DEPLOY != 'true' }}
         uses: aws-actions/aws-cloudformation-github-deploy@v1.2.0
@@ -69,6 +70,7 @@ jobs:
   deploy-task:
     name: Deploy ECS Service
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -76,15 +78,15 @@ jobs:
           fetch-depth: 0
 
       - name: Set Up AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v3
+        uses: aws-actions/configure-aws-credentials@v2
         with:
+          aws-region: ${{ secrets.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Validate Exported Values
         run: |
-          echo "Validating exported values..."
+          echo "Validating exported values from CloudFormation..."
           VPC_ID=$(aws cloudformation list-exports --query "Exports[?Name=='MyVPCID'].Value" --output text)
           TASK_EXEC_ROLE=$(aws cloudformation list-exports --query "Exports[?Name=='TaskExecutionRoleArn'].Value" --output text)
           PublicSubnetId=$(aws cloudformation list-exports --query "Exports[?Name=='PublicSubnetId'].Value" --output text)
@@ -93,10 +95,14 @@ jobs:
           ECS_CLUSTER=$(aws cloudformation list-exports --query "Exports[?Name=='MyECSClusterName'].Value" --output text)
           DB_HOST=$(aws cloudformation list-exports --query "Exports[?Name=='RDSInstanceEndpoint'].Value" --output text)
           MySecurityGroup=$(aws cloudformation list-exports --query "Exports[?Name=='MySecurityGroup'].Value" --output text)
-          if [ -z "$VPC_ID" ] || [ -z "$TASK_EXEC_ROLE" ] || [ -z "$PublicSubnetId" ] || [ -z "$TASK_ROLE" ] || [ -z "$ECR_REPOSITORY" ] || [ -z "$ECS_CLUSTER" ]; then
+
+          # Validate values
+          if [ -z "$VPC_ID" ] || [ -z "$TASK_EXEC_ROLE" ] || [ -z "$PublicSubnetId" ] || [ -z "$TASK_ROLE" ] || [ -z "$ECR_REPOSITORY" ] || [ -z "$ECS_CLUSTER" ] || [ -z "$DB_HOST" ]; then
             echo "One or more exported values are missing! Exiting..."
             exit 1
           fi
+
+          # Export values to GITHUB_ENV
           echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
           echo "TASK_EXEC_ROLE=$TASK_EXEC_ROLE" >> $GITHUB_ENV
           echo "PublicSubnetId=$PublicSubnetId" >> $GITHUB_ENV
@@ -105,72 +111,29 @@ jobs:
           echo "ECS_CLUSTER=$ECS_CLUSTER" >> $GITHUB_ENV
           echo "DB_HOST=$DB_HOST" >> $GITHUB_ENV
           echo "MySecurityGroup=$MySecurityGroup" >> $GITHUB_ENV
-          
-      - name: Install Python
-        run: |
-          sudo apt update
-          sudo apt install -y python3 python3-pip
-      - name: Install Python Dependencies
-        run: |
-          pip install PyYAML jq
-      - name: Convert YAML to JSON and Inject Environment Variables
-        env:
-          TASK_EXEC_ROLE: ${{ env.TASK_EXEC_ROLE }}
-          TASK_ROLE: ${{ env.TASK_ROLE }}
-          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
-          DB_PASSWORD: ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
-          DB_HOST:  ${{ env.DB_HOST }}
-          FlaskEnv:  ${{ env.FlaskEnv }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          TASK_DEF_FILE: cloudformation/templates/Task_def.yml
 
+      - name: Convert YAML to JSON
+        run: python3 cloudformation/templates/convert_yaml_to_json.py
 
-      - name: Generate Outputs
+      - name: Validate Task Definition JSON
         run: |
-          echo "Generating Outputs..."
-          TASK_DEF_ARN="arn:aws:ecs:${AWS_REGION}:${AWS_ACCOUNT_ID}:task-definition/${TASK_DEFINITION_FAMILY}"
-          echo "Task Definition ARN: $TASK_DEF_ARN"
-          echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
-          echo "FlaskAppTaskDefinition_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
-          python cloudformation/templates/convert_and_inject.py
-      - name: Validate and Debug Task Definition JSON
-        run: |
-          echo "Debugging Task_def.json structure..."
+          echo "Validating Task_def.json structure..."
           jq empty Task_def.json || { echo "Invalid JSON structure"; exit 1; }
           cat Task_def.json
-      - name: Debug Exported Values
+
+      - name: Register ECS Task Definition
         run: |
-          echo "Exported values:"
-          echo "VPC_ID=$VPC_ID"
-          echo "TASK_EXEC_ROLE=$TASK_EXEC_ROLE"
-          echo "PublicSubnetId=$PublicSubnetId"
-          echo "TASK_ROLE=$TASK_ROLE"
-          echo "ECR_REPOSITORY=$ECR_REPOSITORY"
-          echo "ECS_CLUSTER=$ECS_CLUSTER"
-          echo "DB_HOST=$DB_HOST"
-          echo "TASK_DEF_FILE=$TASK_DEF_FILE"
-          echo "AWS_REGION=$AWS_REGION"
-          echo "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION"
-      - name: Verify AWS Identity
-        run: |
-          echo "Verifying AWS Identity..."
-          aws sts get-caller-identity --debug
-      - name: Register and Deploy Task Definition
-        run: |
-          echo "Injecting FlaskEnv into Task_def.json..."
-          sed -i "s|\"Ref FlaskEnv\"|\"${{ env.FlaskEnv }}\"|g" Task_def.json
-      
           echo "Registering ECS task definition..."
-          aws ecs register-task-definition --region ${{ secrets.AWS_REGION }} --cli-input-json file://Task_def.json --debug || {
-          echo "Error: Failed to register task definition"; exit 1;
-          }
+          aws ecs register-task-definition \
+            --region ${{ secrets.AWS_REGION }} \
+            --cli-input-json file://Task_def.json --debug || { echo "Error: Failed to register task definition"; exit 1; }
 
       - name: Update ECS Service
-        if: ${{ env.SKIP_DEPLOY != 'true' }}
         run: |
           echo "Updating ECS Service..."
           TASK_DEFINITION_ARN=$(aws ecs describe-task-definition \
-            --task-definition ${{ env.ARTIFACT_NAME }} --query 'taskDefinition.taskDefinitionArn' --output text)
+            --task-definition ${{ env.ARTIFACT_NAME }} \
+            --query 'taskDefinition.taskDefinitionArn' --output text)
           aws ecs update-service \
             --cluster ${{ env.AWS_ECS_CLUSTER_NAME }} \
             --service ${{ env.AWS_ECS_SERVICE_NAME }} \
