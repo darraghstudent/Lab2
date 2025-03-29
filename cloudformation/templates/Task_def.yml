@@ -49,4 +49,11 @@ Parameters:
             - Name: 'DB_NAME'
               Value: 'moviemaking_dev'
 
+  Outputs:
+    FlaskAppTaskDefinition:
+      Description: "The ARN of the Flask App Task Definition"
+      Value: !Ref FlaskAppTaskDefinition
+      Export:
+        Name: FlaskAppTaskDefinition
+     
 
