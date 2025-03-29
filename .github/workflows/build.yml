@@ -14,6 +14,7 @@ env:
   AWS_CF_TEMPLATE_MAIN: cloudformation/templates/main.yml
   TASK_DEF_FILE: cloudformation/templates/Task_def.yml
   DB_PASSWORD: ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
+  FlaskEnv: development2
 
 jobs:
   build:
@@ -146,6 +147,12 @@ jobs:
           echo "VPC_ID=$VPC_ID"
           echo "TASK_EXEC_ROLE=$TASK_EXEC_ROLE"
           echo "PublicSubnetId=$PublicSubnetId"
+          echo "TASK_ROLE=$TASK_ROLE"
+          echo "ECR_REPOSITORY=$ECR_REPOSITORY"
+          echo "ECS_CLUSTER=$ECS_CLUSTER"
+          echo "DB_HOST=$DB_HOST"
+          echo "TASK_DEF_FILE=$TASK_DEF_FILE"
+          
 
       - name: Verify AWS Identity
         run: |
@@ -154,11 +161,13 @@ jobs:
 
       - name: Register and Deploy Task Definition
         run: |
+          echo "Injecting FlaskEnv into Task_def.json..."
+          sed -i "s|\"Ref FlaskEnv\"|\"${{ env.FlaskEnv }}\"|g" Task_def.json
+      
           echo "Registering ECS task definition..."
           aws ecs register-task-definition --region ${{ secrets.AWS_REGION }} --cli-input-json file://Task_def.json --debug || {
             echo "Error: Failed to register task definition"; exit 1;
           }
-
 
       - name: Update ECS Service
         if: ${{ env.SKIP_DEPLOY != 'true' }}
@@ -170,4 +179,4 @@ jobs:
             --cluster ${{ env.AWS_ECS_CLUSTER_NAME }} \
             --service ${{ env.AWS_ECS_SERVICE_NAME }} \
             --task-definition $TASK_DEFINITION_ARN
-            --task-definition $TASK_DEFINITION_ARN
+
