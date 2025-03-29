@@ -77,6 +77,10 @@ def convert_and_inject(task_def_file, output_file):
                 env_var["value"] = os.getenv("ECR_REPOSITORY", "")
             elif name == "MyTaskExecutionRoleExportName":
                 env_var["value"] = os.getenv("TASK_ROLE", "")
+            elif name == "FlaskEnv":
+                env_var["value"] = os.getenv("ECR_REPOSITORY", "")
+            elif name == "AWS_REGION":
+                env_var["value"] = os.getenv("AWS_REGION", "")
      
 
     # Write the final ECS task definition to a JSON file
