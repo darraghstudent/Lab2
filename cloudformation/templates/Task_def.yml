@@ -11,17 +11,6 @@ Parameters:
     Type: 'String'
     Default: 'development2'
 
-Resources:
-  MySecurityGroup:
-    Type: 'AWS::EC2::SecurityGroup'
-    Properties:
-      GroupDescription: 'Allow HTTP access to Flask app'
-      VpcId: !ImportValue MyVPCID  # Ensure MyVPCID is correctly exported in a different stack
-      SecurityGroupIngress:
-        - IpProtocol: 'tcp'
-          FromPort: 5000
-          ToPort: 5000
-          CidrIp: '0.0.0.0/0'
 
   FlaskAppTaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
@@ -59,12 +48,6 @@ Resources:
               Value: '5432'
             - Name: 'DB_NAME'
               Value: 'moviemaking_dev'
-          # Uncomment Secrets for production environments if needed
-          # Secrets:
-          #   - Name: 'DB_PASSWORD_DEV'
-          #     ValueFrom: "arn:aws:secretsmanager:eu-west-1:123456789012:secret:DB_PASSWORD_DEV"
-          #   - Name: 'SECRET_KEY'
-          #     ValueFrom: "arn:aws:secretsmanager:eu-west-1:123456789012:secret:SECRET_KEY"
 
   FlaskAppService:
     Type: 'AWS::ECS::Service'
@@ -78,5 +61,5 @@ Resources:
           Subnets:
             - !ImportValue PublicSubnetId  # Ensure PublicSubnetId is exported correctly
           SecurityGroups:
-            - !Ref MySecurityGroup
+            - !ImportValue MySecurityGroup
           AssignPublicIp: 'ENABLED'
