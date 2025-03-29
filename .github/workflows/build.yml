@@ -122,16 +122,13 @@ jobs:
 
       - name: Convert YAML to JSON and Inject Environment Variables
         env:
-          VPC_ID: ${{ env.VPC_ID }}
           TASK_EXEC_ROLE: ${{ env.TASK_EXEC_ROLE }}
-          PublicSubnetId: ${{ env.PublicSubnetId }}
           TASK_ROLE: ${{ env.TASK_ROLE }}
           ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
           ECS_CLUSTER: ${{ env.ECS_CLUSTER }}
           DB_PASSWORD: ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
           DB_HOST:  ${{ env.DB_HOST }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
-          MySecurityGroup:  ${{ env.MySecurityGroup }}
           TASK_DEF_FILE: cloudformation/templates/Task_def.yml
 
 
