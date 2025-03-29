@@ -67,6 +67,12 @@ jobs:
           capabilities: CAPABILITY_NAMED_IAM
           parameter-overrides: DBPassword=${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
 
+name: Build & Deploy to Staging
+
+on:
+  workflow_dispatch:
+
+jobs:
   deploy-task:
     name: Deploy ECS Service
     runs-on: ubuntu-latest
@@ -77,15 +83,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Python
-        run: |
-          sudo apt update
-          sudo apt install -y python3 python3-pip
-
-      - name: Install Python Dependencies
-        run: |
-          pip install PyYAML
-
+      - name: Install jq
+        run: sudo apt-get install -y jq
 
       - name: Set Up AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
@@ -94,50 +93,47 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Validate Exported Values
+      - name: Fetch CloudFormation Export Values
         run: |
-          echo "Validating exported values from CloudFormation..."
-          VPC_ID=$(aws cloudformation list-exports --query "Exports[?Name=='MyVPCID'].Value" --output text)
-          TASK_EXEC_ROLE=$(aws cloudformation list-exports --query "Exports[?Name=='TaskExecutionRoleArn'].Value" --output text)
-          PublicSubnetId=$(aws cloudformation list-exports --query "Exports[?Name=='PublicSubnetId'].Value" --output text)
-          TASK_ROLE=$(aws cloudformation list-exports --query "Exports[?Name=='MyTaskExecutionRoleExportName'].Value" --output text)
-          ECR_REPOSITORY=$(aws cloudformation list-exports --query "Exports[?Name=='ECRRepositoryURI'].Value" --output text)
-          ECS_CLUSTER=$(aws cloudformation list-exports --query "Exports[?Name=='MyECSClusterName'].Value" --output text)
-          DB_HOST=$(aws cloudformation list-exports --query "Exports[?Name=='RDSInstanceEndpoint'].Value" --output text)
-          MySecurityGroup=$(aws cloudformation list-exports --query "Exports[?Name=='MySecurityGroup'].Value" --output text)
+          echo "Fetching CloudFormation export values..."
+          export TaskExecutionRoleArn=$(aws cloudformation list-exports --query "Exports[?Name=='TaskExecutionRoleArn'].Value" --output text)
+          export MyTaskExecutionRoleExportName=$(aws cloudformation list-exports --query "Exports[?Name=='MyTaskExecutionRoleExportName'].Value" --output text)
+          export ECRRepositoryURI=$(aws cloudformation list-exports --query "Exports[?Name=='ECRRepositoryURI'].Value" --output text)
+          export RDSInstanceEndpoint=$(aws cloudformation list-exports --query "Exports[?Name=='RDSInstanceEndpoint'].Value" --output text)
+          export AWS_REGION=$(aws cloudformation list-exports --query "Exports[?Name=='AWS_REGION'].Value" --output text)
 
-          # Validate values
-          if [ -z "$VPC_ID" ] || [ -z "$TASK_EXEC_ROLE" ] || [ -z "$PublicSubnetId" ] || [ -z "$TASK_ROLE" ] || [ -z "$ECR_REPOSITORY" ] || [ -z "$ECS_CLUSTER" ] || [ -z "$DB_HOST" ]; then
-            echo "One or more exported values are missing! Exiting..."
-            exit 1
+          # Validate fetched values
+          if [ -z "$TaskExecutionRoleArn" ] || [ -z "$MyTaskExecutionRoleExportName" ] || [ -z "$ECRRepositoryURI" ] || [ -z "$RDSInstanceEndpoint" ]; then
+              echo "Error: Missing required export values!"
+              exit 1
           fi
 
-          # Export values to GITHUB_ENV
-          echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
-          echo "TASK_EXEC_ROLE=$TASK_EXEC_ROLE" >> $GITHUB_ENV
-          echo "PublicSubnetId=$PublicSubnetId" >> $GITHUB_ENV
-          echo "TASK_ROLE=$TASK_ROLE" >> $GITHUB_ENV
-          echo "ECR_REPOSITORY=$ECR_REPOSITORY" >> $GITHUB_ENV
-          echo "ECS_CLUSTER=$ECS_CLUSTER" >> $GITHUB_ENV
-          echo "DB_HOST=$DB_HOST" >> $GITHUB_ENV
-          echo "MySecurityGroup=$MySecurityGroup" >> $GITHUB_ENV
+          echo "TaskExecutionRoleArn=$TaskExecutionRoleArn"
+          echo "MyTaskExecutionRoleExportName=$MyTaskExecutionRoleExportName"
+          echo "ECRRepositoryURI=$ECRRepositoryURI"
+          echo "RDSInstanceEndpoint=$RDSInstanceEndpoint"
+          echo "AWS_REGION=$AWS_REGION"
 
-        
+      - name: Inject Values into JSON
+        run: |
+          echo "Injecting values into JSON..."
+          jq ".Resources.FlaskAppTaskDefinition.Properties.ExecutionRoleArn = \"$TaskExecutionRoleArn\" |
+              .Resources.FlaskAppTaskDefinition.Properties.TaskRoleArn = \"$MyTaskExecutionRoleExportName\" |
+              .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Image = \"$ECRRepositoryURI\" |
+              .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[2].Value = \"$DB_PASSWORD\" |
+              .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[3].Value = \"$RDSInstanceEndpoint\" |
+              .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[0].Value = \"$FlaskEnv\" |
+              .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].LogConfiguration.Options.awslogs-region = \"$AWS_REGION\"" Task_def.json > Task_def_updated.json
+
+          echo "Values injected successfully!"
+          cat Task_def_updated.json
+
       - name: Register ECS Task Definition
         run: |
           echo "Registering ECS task definition..."
           aws ecs register-task-definition \
             --region ${{ secrets.AWS_REGION }} \
-            --cli-input-json file://Task_def.json --debug || { echo "Error: Failed to register task definition"; exit 1; }
-
-      - name: Convert YAML to JSON
-        run: python3 cloudformation/templates/convert_yaml_to_json.py
-        
-      - name: Validate Task Definition JSON
-        run: |
-          echo "Validating Task_def.json structure..."
-          jq empty Task_def.json || { echo "Invalid JSON structure"; exit 1; }
-          cat Task_def.json
+            --cli-input-json file://Task_def_updated.json
 
     
       - name: Update ECS Service
