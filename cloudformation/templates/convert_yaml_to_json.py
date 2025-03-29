@@ -8,12 +8,14 @@ def import_value_constructor(loader, node):
     Handles !ImportValue tags.
     Dynamically replaces tags with environment variables or a fallback value.
     """
+    print(f"Processing !ImportValue tag with value: {node.value}")
     # Dynamically resolve environment variable based on the value in the tag
     return os.getenv(node.value, f"ImportValue({node.value})")
 
 # Register the custom constructor for !ImportValue
 yaml.add_constructor('!ImportValue', import_value_constructor, Loader=yaml.FullLoader)
 
+    
 def convert_keys_to_ecs_case(data):
     """
     Recursively converts keys to the exact case required by AWS ECS CLI.
@@ -55,9 +57,6 @@ def convert_yaml_to_json(task_def, output_file):
     with open(task_def, 'r') as yaml_file:
         cf_template = yaml.safe_load(yaml_file)
 
-def import_value_constructor(loader, node):
-    print(f"Processing !ImportValue tag with value: {node.value}")
-    return os.getenv(node.value, f"ImportValue({node.value})")
 
     # Extract the TaskDefinition resource
     task_definition = cf_template.get("Resources", {}).get("FlaskAppTaskDefinition", {}).get("Properties", {})
