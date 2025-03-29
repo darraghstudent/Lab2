@@ -91,16 +91,17 @@ deploy-task:
       run: |
         echo "Current working directory: $(pwd)"
         echo "Listing files in directory:"
-        ls -l
+        if ! ls -l; then
+          echo "Error: Failed to list files in the directory."
+          exit 1
+        fi
 
     - name: Validate Task_def.json File
       run: |
-        echo "Checking if Task_def.json exists..."
-        if [ ! -f Task_def.json ]; then
-            echo "Error: Task_def.json file not found!"
+        if [ ! -f cloudformation/templates/Task_def.json ]; then
+            echo "Error: cloudformation/templates/Task_def.json file not found!"
             exit 1
         fi
-        echo "Task_def.json found and ready for processing."
 
     - name: Fetch CloudFormation Export Values
       run: |
@@ -132,7 +133,8 @@ deploy-task:
             .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[2].Value = \"$DB_PASSWORD\" |
             .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[3].Value = \"$RDSInstanceEndpoint\" |
             .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[0].Value = \"$FlaskEnv\" |
-            .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].LogConfiguration.Options.\"awslogs-region\" = \"$AWS_REGION\"" Task_def.json > Task_def_updated.json
+            .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].LogConfiguration.Options.\"awslogs-region\" = \"$AWS_REGION\"" 
+            cloudformation/templates/Task_def.json > Task_def_updated.json
 
         echo "Values injected successfully!"
         cat Task_def_updated.json
