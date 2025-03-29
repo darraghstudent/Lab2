@@ -46,12 +46,12 @@ def convert_keys_to_ecs_case(data):
     else:
         return data
 
-def convert_yaml_to_json(task_def_file, output_file):
+def convert_yaml_to_json(task_def, output_file):
     """
     Converts YAML Task Definition to JSON.
     """
     # Load YAML file
-    with open(task_def_file, 'r') as yaml_file:
+    with open(task_def, 'r') as yaml_file:
         cf_template = yaml.safe_load(yaml_file)
 
     # Extract the TaskDefinition resource
@@ -89,12 +89,12 @@ def convert_yaml_to_json(task_def_file, output_file):
 
 if __name__ == "__main__":
     # File paths
-    task_def_file = os.getenv("TASK_DEF_FILE", "cloudformation/templates/Task_def.yml")
+    task_def = os.getenv("TASK_DEF", "cloudformation/templates/Task_def.yml")
     output_file = "Task_def.json"
 
     # Convert YAML to JSON
     try:
-        task_definition = convert_yaml_to_json(task_def_file, output_file)
+        task_definition = convert_yaml_to_json(task_def, output_file)
         print("Task Definition JSON generated successfully.")
     except Exception as e:
         print(f"Error: {e}")
