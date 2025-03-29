@@ -125,9 +125,9 @@ jobs:
           TASK_EXEC_ROLE: ${{ env.TASK_EXEC_ROLE }}
           TASK_ROLE: ${{ env.TASK_ROLE }}
           ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
-          ECS_CLUSTER: ${{ env.ECS_CLUSTER }}
           DB_PASSWORD: ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
           DB_HOST:  ${{ env.DB_HOST }}
+          FlaskEnv:  ${{ env.FlaskEnv }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           TASK_DEF_FILE: cloudformation/templates/Task_def.yml
 
