@@ -67,12 +67,6 @@ jobs:
           capabilities: CAPABILITY_NAMED_IAM
           parameter-overrides: DBPassword=${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
 
-name: Build & Deploy to Staging
-
-on:
-  workflow_dispatch:
-
-jobs:
   deploy-task:
     name: Deploy ECS Service
     runs-on: ubuntu-latest
@@ -135,7 +129,6 @@ jobs:
             --region ${{ secrets.AWS_REGION }} \
             --cli-input-json file://Task_def_updated.json
 
-    
       - name: Update ECS Service
         run: |
           echo "Updating ECS Service..."
