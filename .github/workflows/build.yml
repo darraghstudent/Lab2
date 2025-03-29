@@ -136,7 +136,7 @@ jobs:
           echo "Exported values:"
           echo "VPC_ID=$VPC_ID"
           echo "TASK_EXEC_ROLE=$TASK_EXEC_ROLE"
-          echo "SUBNET_ID=$SUBNET_ID"
+          echo "PublicSubnetId=$PublicSubnetId"
 
       - name: Verify AWS Identity
         run: |
