@@ -3,13 +3,16 @@ import yaml
 import json
 
 # Custom constructor for !ImportValue
-def custom_constructor(loader, tag_suffix, node):
-    if tag_suffix == "ImportValue":
-        return os.getenv(node.value, f"ImportValue({node.value})")
-    else:
-        raise ValueError(f"Unhandled tag: {tag_suffix}")
+def import_value_constructor(loader, node):
+    """
+    Handles !ImportValue tags.
+    Dynamically replaces tags with environment variables or a fallback value.
+    """
+    # Dynamically resolve environment variable based on the value in the tag
+    return os.getenv(node.value, f"ImportValue({node.value})")
 
-yaml.add_multi_constructor('!', custom_constructor, Loader=yaml.FullLoader)
+# Register the custom constructor for !ImportValue
+yaml.add_constructor('!ImportValue', import_value_constructor, Loader=yaml.FullLoader)
 
 def convert_keys_to_ecs_case(data):
     """
