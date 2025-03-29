@@ -159,10 +159,6 @@ jobs:
           aws ecs register-task-definition --region ${{ secrets.AWS_REGION }} --cli-input-json file://Task_def.json --debug
     
 
-      - name: Deploy Task Definition
-        run: |
-          echo "Enabling debug mode for ECS task definition registration..."
-          aws ecs register-task-definition --region ${{ env.AWS_REGION }} --cli-input-json file://Task_def.json --debug
 
       - name: Update ECS Service
         if: ${{ env.SKIP_DEPLOY != 'true' }}
