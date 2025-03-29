@@ -7,6 +7,10 @@ def custom_constructor(loader, tag_suffix, node):
     return f"{tag_suffix} {node.value}"
 
 # Add support for !ImportValue
+def custom_constructor(loader, tag_suffix, node):
+    # Resolve ImportValue placeholders using environment variables or mappings
+    return os.getenv(node.value, f"{tag_suffix} {node.value}")
+
 yaml.add_multi_constructor('!', custom_constructor, Loader=yaml.FullLoader)
 
 def convert_keys_to_ecs_case(data):
@@ -78,7 +82,7 @@ def convert_and_inject(task_def_file, output_file):
             elif name == "MyTaskExecutionRoleExportName":
                 env_var["value"] = os.getenv("TASK_ROLE", "")
             elif name == "FlaskEnv":
-                env_var["value"] = os.getenv("ECR_REPOSITORY", "")
+                env_var["value"] = os.getenv("FlaskEnv", "")
             elif name == "AWS_REGION":
                 env_var["value"] = os.getenv("AWS_REGION", "")
      
