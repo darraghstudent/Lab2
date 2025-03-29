@@ -44,11 +44,11 @@ Resources:
             LogDriver: 'awslogs'
             Options:
               awslogs-group: '/ecs/flask-app-service'
-              awslogs-region: !Ref 'AWS::Region'
+              awslogs-region: !ImportValue AWS_REGION
               awslogs-stream-prefix: 'ecs'
           Environment:
             - Name: 'FLASK_ENV'
-              Value: !Ref FlaskEnv
+              Value: !ImportValue FlaskEnv
             - Name: 'DB_USER'
               Value: 'DB_Admin'
             - Name: 'DB_PASSWORD'
