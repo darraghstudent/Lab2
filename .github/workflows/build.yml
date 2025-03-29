@@ -93,6 +93,7 @@ jobs:
           TASK_ROLE=$(aws cloudformation list-exports --query "Exports[?Name=='MyTaskExecutionRoleExportName'].Value" --output text)
           ECR_REPOSITORY=$(aws cloudformation list-exports --query "Exports[?Name=='ECRRepositoryURI'].Value" --output text)
           ECS_CLUSTER=$(aws cloudformation list-exports --query "Exports[?Name=='MyECSClusterName'].Value" --output text)
+          DB_HOST=$(aws cloudformation list-exports --query "Exports[?Name=='RDSInstanceEndpoint'].Value" --output text)
 
           if [ -z "$VPC_ID" ] || [ -z "$TASK_EXEC_ROLE" ] || [ -z "$PublicSubnetId" ] || [ -z "$TASK_ROLE" ] || [ -z "$ECR_REPOSITORY" ] || [ -z "$ECS_CLUSTER" ]; then
             echo "One or more exported values are missing! Exiting..."
@@ -105,7 +106,8 @@ jobs:
           echo "TASK_ROLE=$TASK_ROLE" >> $GITHUB_ENV
           echo "ECR_REPOSITORY=$ECR_REPOSITORY" >> $GITHUB_ENV
           echo "ECS_CLUSTER=$ECS_CLUSTER" >> $GITHUB_ENV
-
+          echo "DB_HOST=$DB_HOST" >> $GITHUB_ENV
+          
       - name: Install Python
         run: |
           sudo apt update
@@ -117,11 +119,19 @@ jobs:
 
       - name: Convert YAML to JSON and Inject Environment Variables
         env:
-          DB_PASSWORD: ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
-          TASK_DEF_FILE: cloudformation/templates/Task_def.yml
           VPC_ID: ${{ env.VPC_ID }}
           TASK_EXEC_ROLE: ${{ env.TASK_EXEC_ROLE }}
           PublicSubnetId: ${{ env.PublicSubnetId }}
+          TASK_ROLE: ${{ env.TASK_ROLE }}
+          ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
+          ECS_CLUSTER: ${{ env.ECS_CLUSTER }}
+          DB_PASSWORD: ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          DB_HOST:  ${{ env.DB_HOST }}
+          TASK_DEF_FILE: cloudformation/templates/Task_def.yml
+
+
+          
         run: |
           python cloudformation/templates/convert_and_inject.py
 
