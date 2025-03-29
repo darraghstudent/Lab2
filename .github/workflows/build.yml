@@ -117,7 +117,7 @@ jobs:
               .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[2].Value = \"$DB_PASSWORD\" |
               .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[3].Value = \"$RDSInstanceEndpoint\" |
               .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[0].Value = \"$FlaskEnv\" |
-              .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].LogConfiguration.Options.awslogs-region = \"$AWS_REGION\"" Task_def.json > Task_def_updated.json
+              .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].LogConfiguration.Options.\"awslogs-region\" = \"$AWS_REGION\"" Task_def.json > Task_def_updated.json
 
           echo "Values injected successfully!"
           cat Task_def_updated.json
