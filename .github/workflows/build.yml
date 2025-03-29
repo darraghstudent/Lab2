@@ -67,81 +67,90 @@ jobs:
           capabilities: CAPABILITY_NAMED_IAM
           parameter-overrides: DBPassword=${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
 
-  deploy-task:
-    name: Deploy ECS Service
-    runs-on: ubuntu-latest
+deploy-task:
+  name: Deploy ECS Service
+  runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
+  steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
 
-      - name: Install jq
-        run: sudo apt-get install -y jq
+    - name: Install jq
+      run: sudo apt-get install -y jq
 
-      - name: Set Up AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-region: ${{ secrets.AWS_REGION }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    - name: Set Up AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-region: ${{ secrets.AWS_REGION }}
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Fetch CloudFormation Export Values
-        run: |
-          echo "Fetching CloudFormation export values..."
-          export TaskExecutionRoleArn=$(aws cloudformation list-exports --query "Exports[?Name=='TaskExecutionRoleArn'].Value" --output text)
-          export MyTaskExecutionRoleExportName=$(aws cloudformation list-exports --query "Exports[?Name=='MyTaskExecutionRoleExportName'].Value" --output text)
-          export ECRRepositoryURI=$(aws cloudformation list-exports --query "Exports[?Name=='ECRRepositoryURI'].Value" --output text)
-          export RDSInstanceEndpoint=$(aws cloudformation list-exports --query "Exports[?Name=='RDSInstanceEndpoint'].Value" --output text)
-          export AWS_REGION=$(aws cloudformation list-exports --query "Exports[?Name=='AWS_REGION'].Value" --output text)
+    - name: Debugging: Check Working Directory
+      run: |
+        echo "Current working directory: $(pwd)"
+        echo "Listing files in directory:"
+        ls -l
 
-          # Validate fetched values
-          if [ -z "$TaskExecutionRoleArn" ] || [ -z "$MyTaskExecutionRoleExportName" ] || [ -z "$ECRRepositoryURI" ] || [ -z "$RDSInstanceEndpoint" ]; then
-              echo "Error: Missing required export values!"
-              exit 1
-          fi
+    - name: Validate Task_def.json File
+      run: |
+        echo "Checking if Task_def.json exists..."
+        if [ ! -f Task_def.json ]; then
+            echo "Error: Task_def.json file not found!"
+            exit 1
+        fi
+        echo "Task_def.json found and ready for processing."
 
-          echo "TaskExecutionRoleArn=$TaskExecutionRoleArn"
-          echo "MyTaskExecutionRoleExportName=$MyTaskExecutionRoleExportName"
-          echo "ECRRepositoryURI=$ECRRepositoryURI"
-          echo "RDSInstanceEndpoint=$RDSInstanceEndpoint"
-          echo "AWS_REGION=$AWS_REGION"
+    - name: Fetch CloudFormation Export Values
+      run: |
+        echo "Fetching CloudFormation export values..."
+        export TaskExecutionRoleArn=$(aws cloudformation list-exports --query "Exports[?Name=='TaskExecutionRoleArn'].Value" --output text)
+        export MyTaskExecutionRoleExportName=$(aws cloudformation list-exports --query "Exports[?Name=='MyTaskExecutionRoleExportName'].Value" --output text)
+        export ECRRepositoryURI=$(aws cloudformation list-exports --query "Exports[?Name=='ECRRepositoryURI'].Value" --output text)
+        export RDSInstanceEndpoint=$(aws cloudformation list-exports --query "Exports[?Name=='RDSInstanceEndpoint'].Value" --output text)
+        export AWS_REGION=$(aws cloudformation list-exports --query "Exports[?Name=='AWS_REGION'].Value" --output text)
 
-      - name: Inject Values into JSON
-        run: |
-          echo "Checking if Task_def.json exists..."
-          if [ ! -f Task_def.json ]; then
-              echo "Error: Task_def.json not found!"
-              exit 1
-          fi
+        # Validate fetched values
+        if [ -z "$TaskExecutionRoleArn" ] || [ -z "$MyTaskExecutionRoleExportName" ] || [ -z "$ECRRepositoryURI" ] || [ -z "$RDSInstanceEndpoint" ]; then
+            echo "Error: Missing required export values!"
+            exit 1
+        fi
 
-          echo "Injecting values into JSON..."
-          jq ".Resources.FlaskAppTaskDefinition.Properties.ExecutionRoleArn = \"$TaskExecutionRoleArn\" |
-              .Resources.FlaskAppTaskDefinition.Properties.TaskRoleArn = \"$MyTaskExecutionRoleExportName\" |
-              .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Image = \"$ECRRepositoryURI\" |
-              .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[2].Value = \"$DB_PASSWORD\" |
-              .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[3].Value = \"$RDSInstanceEndpoint\" |
-              .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[0].Value = \"$FlaskEnv\" |
-              .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].LogConfiguration.Options.\"awslogs-region\" = \"$AWS_REGION\"" Task_def.json > Task_def_updated.json
+        echo "TaskExecutionRoleArn=$TaskExecutionRoleArn"
+        echo "MyTaskExecutionRoleExportName=$MyTaskExecutionRoleExportName"
+        echo "ECRRepositoryURI=$ECRRepositoryURI"
+        echo "RDSInstanceEndpoint=$RDSInstanceEndpoint"
+        echo "AWS_REGION=$AWS_REGION"
 
-          echo "Values injected successfully!"
-          cat Task_def_updated.json
+    - name: Inject Values into JSON
+      run: |
+        echo "Injecting values into JSON..."
+        jq ".Resources.FlaskAppTaskDefinition.Properties.ExecutionRoleArn = \"$TaskExecutionRoleArn\" |
+            .Resources.FlaskAppTaskDefinition.Properties.TaskRoleArn = \"$MyTaskExecutionRoleExportName\" |
+            .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Image = \"$ECRRepositoryURI\" |
+            .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[2].Value = \"$DB_PASSWORD\" |
+            .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[3].Value = \"$RDSInstanceEndpoint\" |
+            .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[0].Value = \"$FlaskEnv\" |
+            .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].LogConfiguration.Options.\"awslogs-region\" = \"$AWS_REGION\"" Task_def.json > Task_def_updated.json
 
-      - name: Register ECS Task Definition
-        run: |
-          echo "Registering ECS task definition..."
-          aws ecs register-task-definition \
-            --region ${{ secrets.AWS_REGION }} \
-            --cli-input-json file://Task_def_updated.json
+        echo "Values injected successfully!"
+        cat Task_def_updated.json
 
-      - name: Update ECS Service
-        run: |
-          echo "Updating ECS Service..."
-          TASK_DEFINITION_ARN=$(aws ecs describe-task-definition \
-            --task-definition ${{ env.ARTIFACT_NAME }} \
-            --query 'taskDefinition.taskDefinitionArn' --output text)
-          aws ecs update-service \
-            --cluster ${{ env.AWS_ECS_CLUSTER_NAME }} \
-            --service ${{ env.AWS_ECS_SERVICE_NAME }} \
-            --task-definition $TASK_DEFINITION_ARN
+    - name: Register ECS Task Definition
+      run: |
+        echo "Registering ECS task definition..."
+        aws ecs register-task-definition \
+          --region ${{ secrets.AWS_REGION }} \
+          --cli-input-json file://Task_def_updated.json
+
+    - name: Update ECS Service
+      run: |
+        echo "Updating ECS Service..."
+        TASK_DEFINITION_ARN=$(aws ecs describe-task-definition \
+          --task-definition ${{ env.ARTIFACT_NAME }} \
+          --query 'taskDefinition.taskDefinitionArn' --output text)
+        aws ecs update-service \
+          --cluster ${{ env.AWS_ECS_CLUSTER_NAME }} \
+          --service ${{ env.AWS_ECS_SERVICE_NAME }} \
+          --task-definition $TASK_DEFINITION_ARN
