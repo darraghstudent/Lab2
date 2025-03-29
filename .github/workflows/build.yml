@@ -126,7 +126,6 @@ jobs:
           ECR_REPOSITORY: ${{ env.ECR_REPOSITORY }}
           ECS_CLUSTER: ${{ env.ECS_CLUSTER }}
           DB_PASSWORD: ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
           DB_HOST:  ${{ env.DB_HOST }}
           TASK_DEF_FILE: cloudformation/templates/Task_def.yml
 
@@ -156,8 +155,9 @@ jobs:
       - name: Register and Deploy Task Definition
         run: |
           echo "Registering ECS task definition..."
-          aws ecs register-task-definition --region ${{ secrets.AWS_REGION }} --cli-input-json file://Task_def.json --debug
-    
+          aws ecs register-task-definition --region ${{ secrets.AWS_REGION }} --cli-input-json file://Task_def.json --debug || {
+            echo "Error: Failed to register task definition"; exit 1;
+          }
 
 
       - name: Update ECS Service
