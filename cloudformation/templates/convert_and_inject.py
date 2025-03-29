@@ -71,10 +71,15 @@ def convert_and_inject(task_def_file, output_file):
                 env_var["value"] = os.getenv("PublicSubnetId", "")
             elif name == "AWS_REGION":
                 env_var["value"] = os.getenv("AWS_REGION", "eu-west-1")  # Default region if not set
-            elif name == "DB_HOST":
+            elif name == "RDSInstanceEndpoint":
                 env_var["value"] = os.getenv("DB_HOST", "localhost")  # Default host if not set
-            elif name == "DB_PORT":
-                env_var["value"] = os.getenv("DB_PORT", "5432")  # Default port if not set
+            elif name == "MyECSClusterName":
+                env_var["value"] = os.getenv("ECS_CLUSTER", "")
+            elif name == "ECRRepositoryURI":
+                env_var["value"] = os.getenv("ECR_REPOSITORY", "")
+            elif name == "MyTaskExecutionRoleExportName  ":
+                env_var["value"] = os.getenv("TASK_ROLE", "")
+     
 
     # Write the final ECS task definition to a JSON file
     with open(output_file, 'w') as json_file:
