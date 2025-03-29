@@ -1,0 +1,85 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "ECS Task Definition and Service for Flask App using Port 5000",
+  "Parameters": {
+    "DBPassword": {
+      "Description": "Database password",
+      "Type": "String",
+      "NoEcho": true
+    },
+    "FlaskEnv": {
+      "Description": "Flask environment (development2 or development1)",
+      "Type": "String",
+      "Default": "development2"
+    }
+  },
+  "Resources": {
+    "FlaskAppTaskDefinition": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "flask-app-task",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": ["FARGATE"],
+        "Cpu": "512",
+        "Memory": "1024",
+        "ExecutionRoleArn": { "Fn::ImportValue": "TaskExecutionRoleArn" },
+        "TaskRoleArn": { "Fn::ImportValue": "MyTaskExecutionRoleExportName" },
+        "ContainerDefinitions": [
+          {
+            "Name": "flask-app-container",
+            "Image": { "Fn::ImportValue": "ECRRepositoryURI" },
+            "PortMappings": [
+              {
+                "ContainerPort": 5000,
+                "Protocol": "tcp"
+              }
+            ],
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": "/ecs/flask-app-service",
+                "awslogs-region": { "Fn::ImportValue": "AWS_REGION" },
+                "awslogs-stream-prefix": "ecs"
+              }
+            },
+            "Environment": [
+              {
+                "Name": "FLASK_ENV",
+                "Value": { "Fn::ImportValue": "FlaskEnv" }
+              },
+              {
+                "Name": "DB_USER",
+                "Value": "DB_Admin"
+              },
+              {
+                "Name": "DB_PASSWORD",
+                "Value": { "Fn::ImportValue": "DB_PASSWORD" }
+              },
+              {
+                "Name": "DB_HOST",
+                "Value": { "Fn::ImportValue": "RDSInstanceEndpoint" }
+              },
+              {
+                "Name": "DB_PORT",
+                "Value": "5432"
+              },
+              {
+                "Name": "DB_NAME",
+                "Value": "moviemaking_dev"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "FlaskAppTaskDefinition": {
+      "Description": "The ARN of the Flask App Task Definition",
+      "Value": { "Ref": "FlaskAppTaskDefinition" },
+      "Export": {
+        "Name": "FlaskAppTaskDefinition"
+      }
+    }
+  }
+}
