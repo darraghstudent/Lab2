@@ -85,6 +85,8 @@ def convert_and_inject(task_def_file, output_file):
                 env_var["value"] = os.getenv("FlaskEnv", "")
             elif name == "AWS_REGION":
                 env_var["value"] = os.getenv("AWS_REGION", "")
+            elif name == "MySecurityGroup":
+                env_var["value"] = os.getenv("MySecurityGroup", "")
      
 
     # Write the final ECS task definition to a JSON file
