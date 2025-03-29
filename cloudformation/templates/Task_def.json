@@ -1,62 +1,55 @@
 {
-  "Resources": {
-    "FlaskAppTaskDefinition": {
-      "Type": "AWS::ECS::TaskDefinition",
-      "Properties": {
-        "Family": "flask-app-task",
-        "NetworkMode": "awsvpc",
-        "RequiresCompatibilities": ["FARGATE"],
-        "Cpu": "512",
-        "Memory": "1024",
-        "ExecutionRoleArn": { "Fn::ImportValue": "TaskExecutionRoleArn" },
-        "TaskRoleArn": { "Fn::ImportValue": "MyTaskExecutionRoleExportName" },
-        "ContainerDefinitions": [
-          {
-            "Name": "flask-app-container",
-            "Image": { "Fn::ImportValue": "ECRRepositoryURI" },
-            "PortMappings": [
-              {
-                "ContainerPort": 5000,
-                "Protocol": "tcp"
-              }
-            ],
-            "LogConfiguration": {
-              "LogDriver": "awslogs",
-              "Options": {
-                "awslogs-group": "/ecs/flask-app-service",
-                "awslogs-region": { "Fn::ImportValue": "AWS_REGION" },
-                "awslogs-stream-prefix": "ecs"
-              }
-            },
-            "Environment": [
-              {
-                "Name": "FLASK_ENV",
-                "Value": { "Fn::ImportValue": "FlaskEnv" }
-              },
-              {
-                "Name": "DB_USER",
-                "Value": "DB_Admin"
-              },
-              {
-                "Name": "DB_PASSWORD",
-                "Value": { "Fn::ImportValue": "DB_PASSWORD" }
-              },
-              {
-                "Name": "DB_HOST",
-                "Value": { "Fn::ImportValue": "RDSInstanceEndpoint" }
-              },
-              {
-                "Name": "DB_PORT",
-                "Value": "5432"
-              },
-              {
-                "Name": "DB_NAME",
-                "Value": "moviemaking_dev"
-              }
-            ]
-          }
-        ]
-      }
+  "family": "flask-app-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": { "Fn::ImportValue": "TaskExecutionRoleArn" },
+  "taskRoleArn": { "Fn::ImportValue": "MyTaskExecutionRoleExportName" },
+  "containerDefinitions": [
+    {
+      "name": "flask-app-container",
+      "image": { "Fn::ImportValue": "ECRRepositoryURI" },
+      "portMappings": [
+        {
+          "containerPort": 5000,
+          "protocol": "tcp"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/flask-app-service",
+          "awslogs-region": { "Fn::ImportValue": "AWS_REGION" },
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "environment": [
+        {
+          "name": "FLASK_ENV",
+          "value": { "Fn::ImportValue": "FlaskEnv" }
+        },
+        {
+          "name": "DB_USER",
+          "value": "DB_Admin"
+        },
+        {
+          "name": "DB_PASSWORD",
+          "value": { "Fn::ImportValue": "DB_PASSWORD" }
+        },
+        {
+          "name": "DB_HOST",
+          "value": { "Fn::ImportValue": "RDSInstanceEndpoint" }
+        },
+        {
+          "name": "DB_PORT",
+          "value": "5432"
+        },
+        {
+          "name": "DB_NAME",
+          "value": "moviemaking_dev"
+        }
+      ]
     }
-  }
+  ]
 }
