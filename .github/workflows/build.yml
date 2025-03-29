@@ -110,6 +110,12 @@ jobs:
 
       - name: Inject Values into JSON
         run: |
+          echo "Checking if Task_def.json exists..."
+          if [ ! -f Task_def.json ]; then
+              echo "Error: Task_def.json not found!"
+              exit 1
+          fi
+
           echo "Injecting values into JSON..."
           jq ".Resources.FlaskAppTaskDefinition.Properties.ExecutionRoleArn = \"$TaskExecutionRoleArn\" |
               .Resources.FlaskAppTaskDefinition.Properties.TaskRoleArn = \"$MyTaskExecutionRoleExportName\" |
