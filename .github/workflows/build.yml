@@ -107,7 +107,7 @@ jobs:
 
       - name: Install Python Dependencies
         run: |
-          pip install PyYAML
+          pip install PyYAML jq
 
       - name: Convert YAML to JSON and Inject Environment Variables
         env:
@@ -121,33 +121,26 @@ jobs:
 
       - name: Validate and Debug Task Definition JSON
         run: |
-          echo "Validating Task_def.json..."
+          echo "Debugging Task_def.json structure..."
+          jq empty Task_def.json || { echo "Invalid JSON structure"; exit 1; }
           cat Task_def.json
 
       - name: Debug Exported Values
         run: |
-          echo "Validating exported values..."
-          VPC_ID=$(aws cloudformation list-exports --query "Exports[?Name=='MyVPCID'].Value" --output text)
-          TASK_EXEC_ROLE=$(aws cloudformation list-exports --query "Exports[?Name=='TaskExecutionRoleArn'].Value" --output text)
-          SUBNET_ID=$(aws cloudformation list-exports --query "Exports[?Name=='PublicSubnetId'].Value" --output text)
-
-          if [ -z "$VPC_ID" ] || [ -z "$TASK_EXEC_ROLE" ] || [ -z "$SUBNET_ID" ]; then
-            echo "One or more exported values are missing! Exiting..."
-            exit 1
-          fi
-
-          echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
-          echo "TASK_EXEC_ROLE=$TASK_EXEC_ROLE" >> $GITHUB_ENV
-          echo "SUBNET_ID=$SUBNET_ID" >> $GITHUB_ENV
+          echo "Exported values:"
+          echo "VPC_ID=$VPC_ID"
+          echo "TASK_EXEC_ROLE=$TASK_EXEC_ROLE"
+          echo "SUBNET_ID=$SUBNET_ID"
 
       - name: Verify AWS Identity
-        run: aws sts get-caller-identity
-
-      - name: Validate and Debug Task Definition JSON
         run: |
-          echo "Validating Task_def.json..."
-          jq empty Task_def.json || echo "Invalid JSON structure"
-          cat Task_def.json
+          echo "Verifying AWS Identity..."
+          aws sts get-caller-identity --debug
+
+      - name: Register and Deploy Task Definition
+        run: |
+          echo "Registering ECS task definition..."
+          aws ecs register-task-definition --region ${{ secrets.AWS_REGION }} --cli-input-json file://Task_def.json --debug
     
 
       - name: Deploy Task Definition
