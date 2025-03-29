@@ -4,13 +4,11 @@ import json
 
 # Custom constructor for !ImportValue
 def custom_constructor(loader, tag_suffix, node):
-    """
-    Custom constructor to resolve CloudFormation-style tags like !ImportValue.
-    Dynamically replaces tags with environment variables or defaults.
-    """
-    return os.getenv(node.value, f"{tag_suffix} {node.value}")
+    if tag_suffix == "ImportValue":
+        return os.getenv(node.value, f"ImportValue({node.value})")
+    else:
+        raise ValueError(f"Unhandled tag: {tag_suffix}")
 
-# Register the custom constructor
 yaml.add_multi_constructor('!', custom_constructor, Loader=yaml.FullLoader)
 
 def convert_keys_to_ecs_case(data):
