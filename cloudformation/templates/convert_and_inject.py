@@ -7,10 +7,15 @@ def custom_constructor(loader, tag_suffix, node):
     Custom constructor to resolve CloudFormation-style tags like !ImportValue.
     Dynamically replaces tags with environment variables or defaults.
     """
+    _ = loader  # Suppress unused parameter warning
+    """
+    Custom constructor to resolve CloudFormation-style tags like !ImportValue.
+    yaml.add_multi_constructor('!', custom_constructor, Loader=yaml.FullLoader)
+    """
     return os.getenv(node.value, f"{tag_suffix} {node.value}")
 
-# Add support for !ImportValue in YAML files
-yaml.add_multi_constructor('!', custom_constructor, Loader=yaml.FullLoader)
+    # Add support for !ImportValue in YAML files
+    yaml.add_multi_constructor('!', custom_constructor, Loader=yaml.FullLoader)
 
 def convert_yaml_to_json_with_outputs(task_def_file, output_file, outputs_file):
     """
@@ -55,27 +60,23 @@ def convert_yaml_to_json_with_outputs(task_def_file, output_file, outputs_file):
             return [convert_keys_to_ecs_case(item) for item in data]
         else:
             return data
+    for env_var in container.get("environment", []):
+        name = env_var["name"]
+        if name == "DB_PASSWORD":
+            env_var["value"] = os.getenv("DB_PASSWORD", "default-password")  # GitHub Secret or default
+        elif name == "TaskExecutionRoleArn":
+            env_var["value"] = os.getenv("TASK_EXEC_ROLE", "")
+        elif name == "RDSInstanceEndpoint":
+            env_var["value"] = os.getenv("DB_HOST", "localhost")  # Default host if not set
+        elif name == "ECRRepositoryURI":
+            env_var["value"] = os.getenv("ECR_REPOSITORY", "")
+        elif name == "MyTaskExecutionRoleExportName":
+            env_var["value"] = os.getenv("TASK_ROLE", "")
+        elif name == "FlaskEnv":
+            env_var["value"] = os.getenv("FlaskEnv", "")
+        elif name == "AWS_REGION":
+            env_var["value"] = os.getenv("AWS_REGION", "")
 
-    ecs_task_def = convert_keys_to_ecs_case(task_definition)
-
-    # Replace placeholders with actual environment variables dynamically
-    for container in ecs_task_def.get("containerDefinitions", []):
-        for env_var in container.get("environment", []):
-            name = env_var["name"]
-            if name == "DB_PASSWORD":
-                env_var["value"] = os.getenv("DB_PASSWORD", "default-password")  # GitHub Secret or default
-            elif name == "TaskExecutionRoleArn":
-                env_var["value"] = os.getenv("TASK_EXEC_ROLE", "")
-            elif name == "RDSInstanceEndpoint":
-                env_var["value"] = os.getenv("DB_HOST", "localhost")  # Default host if not set
-            elif name == "ECRRepositoryURI":
-                env_var["value"] = os.getenv("ECR_REPOSITORY", "")
-            elif name == "MyTaskExecutionRoleExportName":
-                env_var["value"] = os.getenv("TASK_ROLE", "")
-            elif name == "FlaskEnv":
-                env_var["value"] = os.getenv("FlaskEnv", "")
-            elif name == "AWS_REGION":
-                env_var["value"] = os.getenv("AWS_REGION", "")
 
 
     # Save the Task Definition JSON
