@@ -68,8 +68,6 @@ def convert_yaml_to_json_with_outputs(task_def_file, output_file, outputs_file):
                 env_var["value"] = os.getenv("TASK_EXEC_ROLE", "")
             elif name == "RDSInstanceEndpoint":
                 env_var["value"] = os.getenv("DB_HOST", "localhost")  # Default host if not set
-            elif name == "MyECSClusterName":
-                env_var["value"] = os.getenv("ECS_CLUSTER", "")
             elif name == "ECRRepositoryURI":
                 env_var["value"] = os.getenv("ECR_REPOSITORY", "")
             elif name == "MyTaskExecutionRoleExportName":
