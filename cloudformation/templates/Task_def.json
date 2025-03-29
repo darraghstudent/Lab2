@@ -1,18 +1,4 @@
 {
-  "AWSTemplateFormatVersion": "2010-09-09",
-  "Description": "ECS Task Definition and Service for Flask App using Port 5000",
-  "Parameters": {
-    "DBPassword": {
-      "Description": "Database password",
-      "Type": "String",
-      "NoEcho": true
-    },
-    "FlaskEnv": {
-      "Description": "Flask environment (development2 or development1)",
-      "Type": "String",
-      "Default": "development2"
-    }
-  },
   "Resources": {
     "FlaskAppTaskDefinition": {
       "Type": "AWS::ECS::TaskDefinition",
@@ -70,15 +56,6 @@
             ]
           }
         ]
-      }
-    }
-  },
-  "Outputs": {
-    "FlaskAppTaskDefinition": {
-      "Description": "The ARN of the Flask App Task Definition",
-      "Value": { "Ref": "FlaskAppTaskDefinition" },
-      "Export": {
-        "Name": "FlaskAppTaskDefinition"
       }
     }
   }
