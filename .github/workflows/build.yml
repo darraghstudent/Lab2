@@ -132,8 +132,15 @@ jobs:
           TASK_DEF_FILE: cloudformation/templates/Task_def.yml
 
 
-          
+      - name: Generate Outputs
         run: |
+          echo "Generating Outputs..."
+          TASK_DEF_ARN="arn:aws:ecs:${AWS_REGION}:${AWS_ACCOUNT_ID}:task-definition/${TASK_DEFINITION_FAMILY}"
+          echo "Task Definition ARN: $TASK_DEF_ARN"
+          echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
+          echo "FlaskAppTaskDefinition_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
+          
+          run: |
           python cloudformation/templates/convert_and_inject.py
 
       - name: Validate and Debug Task Definition JSON
