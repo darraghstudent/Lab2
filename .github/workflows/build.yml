@@ -118,17 +118,6 @@ jobs:
 
       - name: Inject Values into JSON
         run: |
-          echo "Checking permissions for Task_def.json..."
-          ls -l cloudformation/templates/
-          if [ ! -f cloudformation/templates/Task_def.json ]; then
-              echo "Error: Task_def.json file not found!"
-              exit 1
-          fi
-
-          echo "Fixing file permissions if needed..."
-          chmod u+rw cloudformation/templates/Task_def.json
-          chmod -R u+rw cloudformation/templates/
-
           echo "Injecting values into JSON..."
           jq ".Resources.FlaskAppTaskDefinition.Properties.ExecutionRoleArn = \"$TaskExecutionRoleArn\" |
               .Resources.FlaskAppTaskDefinition.Properties.TaskRoleArn = \"$MyTaskExecutionRoleExportName\" |
@@ -140,15 +129,27 @@ jobs:
               cloudformation/templates/Task_def.json > cloudformation/templates/Task_def_updated.json
 
           echo "Values injected successfully!"
-          cat cloudformation/templates/Task_def_updated.json
+          ls -l cloudformation/templates/
 
+      - name: Validate Task_def_updated.json File
+        run: |
+          echo "Validating Task_def_updated.json..."
+          if [ ! -f cloudformation/templates/Task_def_updated.json ]; then
+              echo "Error: Task_def_updated.json not found!"
+              exit 1
+          fi
+          jq empty cloudformation/templates/Task_def_updated.json || {
+              echo "Error: Invalid JSON structure in Task_def_updated.json!"
+              exit 1
+          }
 
       - name: Register ECS Task Definition
         run: |
           echo "Registering ECS task definition..."
           aws ecs register-task-definition \
             --region ${{ secrets.AWS_REGION }} \
-            --cli-input-json file://Task_def_updated.json
+            --cli-input-json file://cloudformation/templates/Task_def_updated.json
+
 
       - name: Update ECS Service
         run: |
