@@ -122,15 +122,7 @@ jobs:
           echo "DB_HOST=$DB_HOST" >> $GITHUB_ENV
           echo "MySecurityGroup=$MySecurityGroup" >> $GITHUB_ENV
 
-      - name: Convert YAML to JSON
-        run: python3 cloudformation/templates/convert_yaml_to_json.py
-
-      - name: Validate Task Definition JSON
-        run: |
-          echo "Validating Task_def.json structure..."
-          jq empty Task_def.json || { echo "Invalid JSON structure"; exit 1; }
-          cat Task_def.json
-
+        
       - name: Register ECS Task Definition
         run: |
           echo "Registering ECS task definition..."
@@ -138,6 +130,16 @@ jobs:
             --region ${{ secrets.AWS_REGION }} \
             --cli-input-json file://Task_def.json --debug || { echo "Error: Failed to register task definition"; exit 1; }
 
+      - name: Convert YAML to JSON
+        run: python3 cloudformation/templates/convert_yaml_to_json.py
+        
+      - name: Validate Task Definition JSON
+        run: |
+          echo "Validating Task_def.json structure..."
+          jq empty Task_def.json || { echo "Invalid JSON structure"; exit 1; }
+          cat Task_def.json
+
+    
       - name: Update ECS Service
         run: |
           echo "Updating ECS Service..."
