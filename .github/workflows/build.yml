@@ -116,23 +116,19 @@ jobs:
           echo "RDSInstanceEndpoint=$RDSInstanceEndpoint"
           echo "AWS_REGION=$AWS_REGION"
 
-      - name: Debug File Permissions
-        run: |
-          echo "Checking permissions for cloudformation/templates/Task_def.json..."
-          ls -l cloudformation/templates/
-            
-      - name: Fix Ownership of Task_def.json
-        run: |
-          echo "Fixing ownership for Task_def.json..."
-          sudo chown $(whoami):$(whoami) cloudformation/templates/Task_def.json
-
-      - name: Fix File Permissions
-        run: |
-          echo "Fixing file permissions for Task_def.json..."
-          chmod u+rw cloudformation/templates/Task_def.json
-
       - name: Inject Values into JSON
         run: |
+          echo "Checking permissions for Task_def.json..."
+          ls -l cloudformation/templates/
+          if [ ! -f cloudformation/templates/Task_def.json ]; then
+              echo "Error: Task_def.json file not found!"
+              exit 1
+          fi
+
+          echo "Fixing file permissions if needed..."
+          chmod u+rw cloudformation/templates/Task_def.json
+          chmod -R u+rw cloudformation/templates/
+
           echo "Injecting values into JSON..."
           jq ".Resources.FlaskAppTaskDefinition.Properties.ExecutionRoleArn = \"$TaskExecutionRoleArn\" |
               .Resources.FlaskAppTaskDefinition.Properties.TaskRoleArn = \"$MyTaskExecutionRoleExportName\" |
@@ -140,11 +136,12 @@ jobs:
               .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[2].Value = \"$DB_PASSWORD\" |
               .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[3].Value = \"$RDSInstanceEndpoint\" |
               .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[0].Value = \"$FlaskEnv\" |
-              .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].LogConfiguration.Options.\"awslogs-region\" = \"$AWS_REGION\"" 
-              cloudformation/templates/Task_def.json > Task_def_updated.json
+              .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].LogConfiguration.Options.\"awslogs-region\" = \"$AWS_REGION\"" \
+              cloudformation/templates/Task_def.json > cloudformation/templates/Task_def_updated.json
 
           echo "Values injected successfully!"
-          cat Task_def_updated.json
+          cat cloudformation/templates/Task_def_updated.json
+
 
       - name: Register ECS Task Definition
         run: |
