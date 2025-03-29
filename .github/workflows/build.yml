@@ -89,16 +89,22 @@ jobs:
           echo "Validating exported values..."
           VPC_ID=$(aws cloudformation list-exports --query "Exports[?Name=='MyVPCID'].Value" --output text)
           TASK_EXEC_ROLE=$(aws cloudformation list-exports --query "Exports[?Name=='TaskExecutionRoleArn'].Value" --output text)
-          SUBNET_ID=$(aws cloudformation list-exports --query "Exports[?Name=='PublicSubnetId'].Value" --output text)
+          PublicSubnetId=$(aws cloudformation list-exports --query "Exports[?Name=='PublicSubnetId'].Value" --output text)
+          TASK_ROLE=$(aws cloudformation list-exports --query "Exports[?Name=='MyTaskExecutionRoleExportName'].Value" --output text)
+          ECR_REPOSITORY=$(aws cloudformation list-exports --query "Exports[?Name=='ECRRepositoryURI'].Value" --output text)
+          ECS_CLUSTER=$(aws cloudformation list-exports --query "Exports[?Name=='MyECSClusterName'].Value" --output text)
 
-          if [ -z "$VPC_ID" ] || [ -z "$TASK_EXEC_ROLE" ] || [ -z "$SUBNET_ID" ]; then
+          if [ -z "$VPC_ID" ] || [ -z "$TASK_EXEC_ROLE" ] || [ -z "$PublicSubnetId" ] || [ -z "$TASK_ROLE" ] || [ -z "$ECR_REPOSITORY" ] || [ -z "$ECS_CLUSTER" ]; then
             echo "One or more exported values are missing! Exiting..."
             exit 1
           fi
 
           echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
           echo "TASK_EXEC_ROLE=$TASK_EXEC_ROLE" >> $GITHUB_ENV
-          echo "SUBNET_ID=$SUBNET_ID" >> $GITHUB_ENV
+          echo "PublicSubnetId=$PublicSubnetId" >> $GITHUB_ENV
+          echo "TASK_ROLE=$TASK_ROLE" >> $GITHUB_ENV
+          echo "ECR_REPOSITORY=$ECR_REPOSITORY" >> $GITHUB_ENV
+          echo "ECS_CLUSTER=$ECS_CLUSTER" >> $GITHUB_ENV
 
       - name: Install Python
         run: |
@@ -115,7 +121,7 @@ jobs:
           TASK_DEF_FILE: cloudformation/templates/Task_def.yml
           VPC_ID: ${{ env.VPC_ID }}
           TASK_EXEC_ROLE: ${{ env.TASK_EXEC_ROLE }}
-          SUBNET_ID: ${{ env.SUBNET_ID }}
+          PublicSubnetId: ${{ env.PublicSubnetId }}
         run: |
           python cloudformation/templates/convert_and_inject.py
 
