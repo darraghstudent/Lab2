@@ -69,8 +69,6 @@ def convert_and_inject(task_def_file, output_file):
                 env_var["value"] = os.getenv("TASK_EXEC_ROLE", "")
             elif name == "PublicSubnetId":
                 env_var["value"] = os.getenv("PublicSubnetId", "")
-            elif name == "AWS_REGION":
-                env_var["value"] = os.getenv("AWS_REGION", "eu-west-1")  # Default region if not set
             elif name == "RDSInstanceEndpoint":
                 env_var["value"] = os.getenv("DB_HOST", "localhost")  # Default host if not set
             elif name == "MyECSClusterName":
