@@ -48,9 +48,7 @@ jobs:
             --change-set-name TempChangeSet \
             --capabilities CAPABILITY_NAMED_IAM \
             --query "Id" --output text || echo "NO_CHANGES")
-
           echo "ChangeSet Result: $CHANGESET"
-
           if [ "$CHANGESET" = "NO_CHANGES" ]; then
             echo "No changes detected. Skipping deployment."
             echo "SKIP_DEPLOY=true" >> $GITHUB_ENV
@@ -59,7 +57,6 @@ jobs:
             echo "SKIP_DEPLOY=false" >> $GITHUB_ENV
           fi
           exit 0
-
       - name: Deploy CloudFormation Main
         if: ${{ env.SKIP_DEPLOY != 'true' }}
         uses: aws-actions/aws-cloudformation-github-deploy@v1.2.0
@@ -96,12 +93,10 @@ jobs:
           ECS_CLUSTER=$(aws cloudformation list-exports --query "Exports[?Name=='MyECSClusterName'].Value" --output text)
           DB_HOST=$(aws cloudformation list-exports --query "Exports[?Name=='RDSInstanceEndpoint'].Value" --output text)
           MySecurityGroup=$(aws cloudformation list-exports --query "Exports[?Name=='MySecurityGroup'].Value" --output text)
-
           if [ -z "$VPC_ID" ] || [ -z "$TASK_EXEC_ROLE" ] || [ -z "$PublicSubnetId" ] || [ -z "$TASK_ROLE" ] || [ -z "$ECR_REPOSITORY" ] || [ -z "$ECS_CLUSTER" ]; then
             echo "One or more exported values are missing! Exiting..."
             exit 1
           fi
-
           echo "VPC_ID=$VPC_ID" >> $GITHUB_ENV
           echo "TASK_EXEC_ROLE=$TASK_EXEC_ROLE" >> $GITHUB_ENV
           echo "PublicSubnetId=$PublicSubnetId" >> $GITHUB_ENV
@@ -115,11 +110,9 @@ jobs:
         run: |
           sudo apt update
           sudo apt install -y python3 python3-pip
-
       - name: Install Python Dependencies
         run: |
           pip install PyYAML jq
-
       - name: Convert YAML to JSON and Inject Environment Variables
         env:
           TASK_EXEC_ROLE: ${{ env.TASK_EXEC_ROLE }}
@@ -139,16 +132,12 @@ jobs:
           echo "Task Definition ARN: $TASK_DEF_ARN"
           echo "TASK_DEF_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
           echo "FlaskAppTaskDefinition_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
-          
-          run: |
           python cloudformation/templates/convert_and_inject.py
-
       - name: Validate and Debug Task Definition JSON
         run: |
           echo "Debugging Task_def.json structure..."
           jq empty Task_def.json || { echo "Invalid JSON structure"; exit 1; }
           cat Task_def.json
-
       - name: Debug Exported Values
         run: |
           echo "Exported values:"
@@ -162,12 +151,10 @@ jobs:
           echo "TASK_DEF_FILE=$TASK_DEF_FILE"
           echo "AWS_REGION=$AWS_REGION"
           echo "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION"
-
       - name: Verify AWS Identity
         run: |
           echo "Verifying AWS Identity..."
           aws sts get-caller-identity --debug
-
       - name: Register and Deploy Task Definition
         run: |
           echo "Injecting FlaskEnv into Task_def.json..."
@@ -188,4 +175,3 @@ jobs:
             --cluster ${{ env.AWS_ECS_CLUSTER_NAME }} \
             --service ${{ env.AWS_ECS_SERVICE_NAME }} \
             --task-definition $TASK_DEFINITION_ARN
-
