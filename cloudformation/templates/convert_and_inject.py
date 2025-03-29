@@ -1,22 +1,31 @@
-import json
 import os
 import yaml
+import json
 
-# Custom constructor to handle AWS-specific tags like !ImportValue
 def custom_constructor(loader, tag_suffix, node):
-    return f"{tag_suffix} {node.value}"
-
-# Add support for !ImportValue
-def custom_constructor(loader, tag_suffix, node):
-    # Resolve ImportValue placeholders using environment variables or mappings
+    """
+    Custom constructor to resolve CloudFormation-style tags like !ImportValue.
+    Dynamically replaces tags with environment variables or defaults.
+    """
     return os.getenv(node.value, f"{tag_suffix} {node.value}")
 
+# Add support for !ImportValue in YAML files
 yaml.add_multi_constructor('!', custom_constructor, Loader=yaml.FullLoader)
 
-def convert_keys_to_ecs_case(data):
+def convert_yaml_to_json_with_outputs(task_def_file, output_file, outputs_file):
     """
-    Recursively converts keys to the exact case required by AWS ECS CLI.
+    Converts YAML Task Definition to JSON and generates Outputs (CloudFormation-style).
     """
+    # Load YAML file
+    with open(task_def_file, 'r') as yaml_file:
+        cf_template = yaml.safe_load(yaml_file)
+
+    # Extract the TaskDefinition resource
+    task_definition = cf_template.get("Resources", {}).get("FlaskAppTaskDefinition", {}).get("Properties", {})
+    if not task_definition:
+        raise ValueError("Task definition is missing or incorrectly formatted in YAML file.")
+
+    # Convert keys to ECS-specific case
     ecs_case_mapping = {
         "Family": "family",
         "NetworkMode": "networkMode",
@@ -38,41 +47,25 @@ def convert_keys_to_ecs_case(data):
         "Essential": "essential",
         "Image": "image"
     }
-    
-    if isinstance(data, dict):
-        return {ecs_case_mapping.get(key, key): convert_keys_to_ecs_case(value) for key, value in data.items()}
-    elif isinstance(data, list):
-        return [convert_keys_to_ecs_case(item) for item in data]
-    else:
-        return data
 
-def convert_and_inject(task_def_file, output_file):
-    # Load the YAML file (assumes CloudFormation-style input)
-    with open(task_def_file, 'r') as yaml_file:
-        cf_template = yaml.load(yaml_file, Loader=yaml.FullLoader)
+    def convert_keys_to_ecs_case(data):
+        if isinstance(data, dict):
+            return {ecs_case_mapping.get(key, key): convert_keys_to_ecs_case(value) for key, value in data.items()}
+        elif isinstance(data, list):
+            return [convert_keys_to_ecs_case(item) for item in data]
+        else:
+            return data
 
-    # Extract the TaskDefinition resource from the CloudFormation template
-    task_definition = cf_template.get("Resources", {}).get("FlaskAppTaskDefinition", {}).get("Properties", {})
-
-    # Validate the task_definition dictionary
-    if not task_definition:
-        raise ValueError("Task definition is missing or incorrectly formatted.")
-
-    # Convert keys to ECS-specific case
     ecs_task_def = convert_keys_to_ecs_case(task_definition)
 
     # Replace placeholders with actual environment variables dynamically
-    for container in ecs_task_def.get("containerDefinitions", []):  # Note: PascalCase preserved
-        for env_var in container.get("environment", []):  # Note: PascalCase preserved
-            name = env_var.get("name")
+    for container in ecs_task_def.get("containerDefinitions", []):
+        for env_var in container.get("environment", []):
+            name = env_var["name"]
             if name == "DB_PASSWORD":
                 env_var["value"] = os.getenv("DB_PASSWORD", "default-password")  # GitHub Secret or default
-            elif name == "VpcId":
-                env_var["value"] = os.getenv("VPC_ID", "")
             elif name == "TaskExecutionRoleArn":
                 env_var["value"] = os.getenv("TASK_EXEC_ROLE", "")
-            elif name == "PublicSubnetId":
-                env_var["value"] = os.getenv("PublicSubnetId", "")
             elif name == "RDSInstanceEndpoint":
                 env_var["value"] = os.getenv("DB_HOST", "localhost")  # Default host if not set
             elif name == "MyECSClusterName":
@@ -85,15 +78,40 @@ def convert_and_inject(task_def_file, output_file):
                 env_var["value"] = os.getenv("FlaskEnv", "")
             elif name == "AWS_REGION":
                 env_var["value"] = os.getenv("AWS_REGION", "")
-            elif name == "MySecurityGroup":
-                env_var["value"] = os.getenv("MySecurityGroup", "")
-     
 
-    # Write the final ECS task definition to a JSON file
+
+    # Save the Task Definition JSON
     with open(output_file, 'w') as json_file:
         json.dump(ecs_task_def, json_file, indent=2)
 
+    # Generate Outputs (simulate CloudFormation-style export)
+    task_def_arn = f"arn:aws:ecs:{os.getenv('AWS_REGION', 'us-east-1')}:{os.getenv('AWS_ACCOUNT_ID', '123456789012')}:task-definition/{ecs_task_def['family']}"
+    outputs = {
+        "FlaskAppTaskDefinition": {
+            "Description": "The ARN of the Flask App Task Definition",
+            "Value": task_def_arn,
+            "ExportName": "FlaskAppTaskDefinition"
+        }
+    }
+
+    # Save Outputs to JSON file
+    with open(outputs_file, 'w') as outputs_json_file:
+        json.dump(outputs, outputs_json_file, indent=2)
+
+    return ecs_task_def, outputs
+
+
 if __name__ == "__main__":
-    task_def_file = os.getenv('TASK_DEF_FILE', 'cloudformation/templates/Task_def.yml')
-    output_file = 'Task_def.json'
-    convert_and_inject(task_def_file, output_file)
+    # File paths
+    task_def_file = os.getenv("TASK_DEF_FILE", "cloudformation/templates/Task_def.yml")
+    output_file = "Task_def.json"
+    outputs_file = "Task_def_outputs.json"
+
+    # Convert YAML and generate outputs
+    try:
+        task_definition, outputs = convert_yaml_to_json_with_outputs(task_def_file, output_file, outputs_file)
+        print("Task Definition JSON and Outputs generated successfully.")
+        print("Outputs:")
+        print(json.dumps(outputs, indent=2))
+    except Exception as e:
+        print(f"Error: {e}")
