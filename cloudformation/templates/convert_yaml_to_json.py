@@ -55,6 +55,10 @@ def convert_yaml_to_json(task_def, output_file):
     with open(task_def, 'r') as yaml_file:
         cf_template = yaml.safe_load(yaml_file)
 
+def import_value_constructor(loader, node):
+    print(f"Processing !ImportValue tag with value: {node.value}")
+    return os.getenv(node.value, f"ImportValue({node.value})")
+
     # Extract the TaskDefinition resource
     task_definition = cf_template.get("Resources", {}).get("FlaskAppTaskDefinition", {}).get("Properties", {})
     if not task_definition:
