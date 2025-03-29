@@ -128,6 +128,7 @@ jobs:
           ECS_CLUSTER: ${{ env.ECS_CLUSTER }}
           DB_PASSWORD: ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
           DB_HOST:  ${{ env.DB_HOST }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
           TASK_DEF_FILE: cloudformation/templates/Task_def.yml
 
 
