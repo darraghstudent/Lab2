@@ -95,6 +95,7 @@ jobs:
           ECR_REPOSITORY=$(aws cloudformation list-exports --query "Exports[?Name=='ECRRepositoryURI'].Value" --output text)
           ECS_CLUSTER=$(aws cloudformation list-exports --query "Exports[?Name=='MyECSClusterName'].Value" --output text)
           DB_HOST=$(aws cloudformation list-exports --query "Exports[?Name=='RDSInstanceEndpoint'].Value" --output text)
+          MySecurityGroup=$(aws cloudformation list-exports --query "Exports[?Name=='MySecurityGroup'].Value" --output text)
 
           if [ -z "$VPC_ID" ] || [ -z "$TASK_EXEC_ROLE" ] || [ -z "$PublicSubnetId" ] || [ -z "$TASK_ROLE" ] || [ -z "$ECR_REPOSITORY" ] || [ -z "$ECS_CLUSTER" ]; then
             echo "One or more exported values are missing! Exiting..."
@@ -108,6 +109,7 @@ jobs:
           echo "ECR_REPOSITORY=$ECR_REPOSITORY" >> $GITHUB_ENV
           echo "ECS_CLUSTER=$ECS_CLUSTER" >> $GITHUB_ENV
           echo "DB_HOST=$DB_HOST" >> $GITHUB_ENV
+          echo "MySecurityGroup=$MySecurityGroup" >> $GITHUB_ENV
           
       - name: Install Python
         run: |
@@ -129,6 +131,7 @@ jobs:
           DB_PASSWORD: ${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
           DB_HOST:  ${{ env.DB_HOST }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
+          MySecurityGroup:  ${{ env.MySecurityGroup }}
           TASK_DEF_FILE: cloudformation/templates/Task_def.yml
 
 
@@ -168,7 +171,7 @@ jobs:
       
           echo "Registering ECS task definition..."
           aws ecs register-task-definition --region ${{ secrets.AWS_REGION }} --cli-input-json file://Task_def.json --debug || {
-            echo "Error: Failed to register task definition"; exit 1;
+          echo "Error: Failed to register task definition"; exit 1;
           }
 
       - name: Update ECS Service
