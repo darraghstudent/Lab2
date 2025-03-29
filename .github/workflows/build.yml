@@ -152,7 +152,8 @@ jobs:
           echo "ECS_CLUSTER=$ECS_CLUSTER"
           echo "DB_HOST=$DB_HOST"
           echo "TASK_DEF_FILE=$TASK_DEF_FILE"
-          
+          echo "AWS_REGION=$AWS_REGION"
+          echo "AWS_DEFAULT_REGION=$AWS_DEFAULT_REGION
 
       - name: Verify AWS Identity
         run: |
