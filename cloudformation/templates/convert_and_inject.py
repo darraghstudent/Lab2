@@ -1,5 +1,6 @@
 import json
 import os
+import yaml
 
 # Custom constructor to handle AWS-specific tags like !ImportValue
 def custom_constructor(loader, tag_suffix, node):
