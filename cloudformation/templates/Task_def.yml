@@ -52,7 +52,7 @@ Resources:
             - Name: 'DB_USER'
               Value: 'DB_Admin'
             - Name: 'DB_PASSWORD'
-              Value: !Ref DBPassword
+              Value: !ImportValue DB_PASSWORD
             - Name: 'DB_HOST'
               Value: !ImportValue RDSInstanceEndpoint  # Ensure RDSInstanceEndpoint is exported correctly
             - Name: 'DB_PORT'
