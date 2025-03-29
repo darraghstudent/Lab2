@@ -4,13 +4,12 @@ import json
 
 # Custom constructor for !ImportValue
 def import_value_constructor(loader, node):
-    """
-    Handles !ImportValue tags.
-    Dynamically replaces tags with environment variables or a fallback value.
-    """
-    print(f"Processing !ImportValue tag with value: {node.value}")
-    # Dynamically resolve environment variable based on the value in the tag
-    return os.getenv(node.value, f"ImportValue({node.value})")
+    value = os.getenv(node.value)
+    if value is None:
+        raise ValueError(f"Environment variable '{node.value}' not found for !ImportValue")
+    print(f"Processing !ImportValue tag: {node.value} -> {value}")
+    return value
+
 
 # Register the custom constructor for !ImportValue
 yaml.add_constructor('!ImportValue', import_value_constructor, Loader=yaml.FullLoader)
