@@ -107,10 +107,10 @@ jobs:
           echo "Fetching CloudFormation export values..."
           
           # Fetch export values from CloudFormation
-          MyTaskExecutionRoleExportName='MyTaskExecutionRoleExportName' # Define your export name if needed
-          TaskExecutionRoleArn=$(aws cloudformation list-exports --query "Exports[?Name=='$MyTaskExecutionRoleExportName'].Value" --output text)
-          ECRRepositoryURI=$(aws cloudformation list-exports --query "Exports[?Name=='MyECRRepositoryURIExportName'].Value" --output text)
-          RDSInstanceEndpoint=$(aws cloudformation list-exports --query "Exports[?Name=='MyRDSInstanceEndpointExportName'].Value" --output text)
+          MyTaskExecutionRoleExportName=$(aws cloudformation list-exports --query "Exports[?Name=='MyTaskExecutionRoleExportName'].Value" --output text)
+          TaskExecutionRoleArn=$(aws cloudformation list-exports --query "Exports[?Name=='TaskExecutionRoleArn'].Value" --output text)
+          ECRRepositoryURI=$(aws cloudformation list-exports --query "Exports[?Name=='ECRRepositoryURI'].Value" --output text)
+          RDSInstanceEndpoint=$(aws cloudformation list-exports --query "Exports[?Name=='RDSInstanceEndpoint'].Value" --output text)
       
           # Replace placeholders in JSON file
           sed -i "s|{placeholders_TaskExecutionRoleArn}|${TaskExecutionRoleArn}|g" cloudformation/templates/Task_def.json
