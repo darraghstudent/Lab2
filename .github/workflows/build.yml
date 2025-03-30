@@ -128,7 +128,7 @@ jobs:
         run: ls -l entrypoint.sh
 
       - name: Test Entrypoint Script Execution
-        run: docker run --rm <your-image> /app/entrypoint.sh
+        run: docker run --rm my-repo:latest /app/entrypoint.sh
 
       - name: Push Docker Image to ECR
         run: |
