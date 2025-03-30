@@ -161,7 +161,7 @@ jobs:
           echo "Registering ECS task definition..."
           aws ecs register-task-definition \
             --region ${{ secrets.AWS_REGION }} \
-            --cli-input-json file://cloudformation/templates/Task_def.json
+            --cli-input-json file://cloudformation/templates/Task_def_updated.json
 
 
       - name: Update ECS Service
