@@ -252,7 +252,7 @@ Outputs:
       Name: MyTaskExecutionRoleExportName
   MySecurityGroup:
     Description: "Security group for Flask"
-    Value: !GetAtt MySecurityGroup
+    Value: !Ref MySecurityGroup
     Export:
       Name: MySecurityGroup
   FlaskAppTaskDefinition:
