@@ -95,3 +95,5 @@ config = {
 flask_env = os.getenv("FLASK_ENV", "development2")
 selected_config = config.get(flask_env, DevelopmentConfig2)
 print(f"Using configuration: {selected_config.__name__}")
+print(f"Environment variable FLASK_ENV is set to: {flask_env}")
+
