@@ -295,29 +295,29 @@ jobs:
         if: ${{ env.UPDATE_TASK_DEF == 'true' }}
         run: |
           echo "Checking if ECS Service exists..."
-
+      
           SERVICE_EXISTS=$(aws ecs describe-services \
             --cluster $MyECSClusterName \
-            --services FlaskAppService  \
-            --query "failures" --output text)
-
-          if [ -z "$SERVICE_EXISTS" ]; then
+            --services FlaskAppService \
+            --query "services[?serviceName=='FlaskAppService'].serviceName" \
+            --output text)
+      
+          if [ -n "$SERVICE_EXISTS" ]; then
             echo "Service exists. Updating ECS Service..."
-
+      
             aws ecs update-service \
               --cluster $MyECSClusterName \
               --service FlaskAppService \
-              --task-definition <TASK_DEFINITION_ARN> 
-
+              --task-definition $TASK_DEFINITION_ARN
+      
           else
             echo "Service does not exist. Creating ECS Service..."
-
+      
             aws ecs create-service \
               --cluster $MyECSClusterName \
-              --service-name FlaskAppService  \
-              --task-definition <TASK_DEFINITION_ARN> \
+              --service-name FlaskAppService \
+              --task-definition $TASK_DEFINITION_ARN \
               --desired-count 2 \
               --launch-type FARGATE \
               --network-configuration "awsvpcConfiguration={subnets=[$PublicSubnetId],securityGroups=[$MySecurityGroup],assignPublicIp='ENABLED'}"
           fi
-
