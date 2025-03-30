@@ -35,6 +35,8 @@ def create_app():
     env = os.getenv("FLASK_ENV", "development2")  # Use environment variable or default
     app.config.from_object(config[env])
     logger.info(f"Environment set to {env}")
+    print(f"Environment variable FLASK_ENV is set to: {flask_env}")
+
 
 
     # Register blueprints
