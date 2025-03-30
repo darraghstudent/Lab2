@@ -17,6 +17,8 @@ COPY . .
 # Make the entrypoint script executable
 RUN chmod +x /app/entrypoint.sh
 
+RUN ls -l /app/entrypoint.sh
+
 # Expose the port your Flask app uses
 EXPOSE 5000
 
