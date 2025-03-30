@@ -180,9 +180,9 @@ jobs:
           TaskExecutionRoleArn=$(aws cloudformation list-exports --query "Exports[?Name=='TaskExecutionRoleArn'].Value" --output text)
           ECRRepositoryURI=$(aws cloudformation list-exports --query "Exports[?Name=='ECRRepositoryURI'].Value" --output text)
           RDSInstanceEndpoint=$(aws cloudformation list-exports --query "Exports[?Name=='RDSInstanceEndpoint'].Value" --output text)
+          TaskDefinitionArns=$(aws cloudformation list-exports --query "Exports[?Name=='taskDefinitionArns'].Value" --output text)
+
          
-
-
           # Replace placeholders in JSON file using jq
           jq \
             --arg TaskExecutionRoleArn "${TaskExecutionRoleArn}" \
@@ -210,6 +210,7 @@ jobs:
           echo "RDSInstanceEndpoint=${RDSInstanceEndpoint}" >> $GITHUB_ENV
           echo "AWS_REGION=${AWS_REGION}" >> $GITHUB_ENV
 
+          LATEST_TASK_DEFINITION_ARN=$(echo $TaskDefinitionArns | tr ' ' '\n' | sort | tail -n 1)
           
 
       - name: Configure AWS credentials
@@ -232,7 +233,7 @@ jobs:
   
           # Retrieve current image digest from ECS task definition
           CURRENT_IMAGE_DIGEST=$(aws ecs describe-task-definition \
-            --task-definition MyTaskDefinitionName \
+            --task-definition LATEST_TASK_DEFINITION_ARN \
             --query "taskDefinition.containerDefinitions[0].image" \
             --output text | cut -d '@' -f 2)
           echo "Current Image Digest: $CURRENT_IMAGE_DIGEST"
