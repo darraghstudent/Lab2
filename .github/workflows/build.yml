@@ -124,6 +124,9 @@ jobs:
         run: |
           docker build --platform=linux/amd64 -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-repo:latest .
 
+      - name: Debug Local File Permissions
+        run: ls -l entrypoint.sh
+
       - name: Push Docker Image to ECR
         run: |
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-repo:latest
