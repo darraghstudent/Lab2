@@ -128,6 +128,10 @@ jobs:
             -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-repo:latest .
 
 
+      - name: Debug FlaskEnv
+        run: echo "FlaskEnv is set to: ${{ env.FlaskEnv }}"
+
+
 
       - name: Push Docker Image to ECR
         run: |
