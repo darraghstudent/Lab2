@@ -5,7 +5,7 @@ Description: 'Flask Seervice'
     Type: 'AWS::ECS::Service'
     Properties:
       Cluster: !ImportValue MyECSClusterName  # Ensure MyECSClusterName is exported correctly
-      TaskDefinition: !ImportValue FlaskAppTaskDefinition
+      TaskDefinition: !Ref TaskDefinitionArn
       DesiredCount: 2
       LaunchType: 'FARGATE'
       NetworkConfiguration:
