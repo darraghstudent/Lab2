@@ -28,7 +28,7 @@ EXPOSE 5000
 ENV PYTHONPATH=/app
 
 # Conditionally run entrypoint.sh only if ENV is not local
-ENTRYPOINT ["/bin/sh", "-c", "if [ \"$ENV\" != \"development\" ]; then /app/entrypoint.sh; else echo 'Skipping entrypoint script in local environment'; fi"]
+ENTRYPOINT ["/bin/bash", "/app/entrypoint.sh"]
 
 # Command to run the Flask app
 CMD ["python", "run.py"]
