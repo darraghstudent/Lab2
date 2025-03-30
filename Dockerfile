@@ -27,6 +27,16 @@ EXPOSE 5000
 # Set PYTHONPATH so Python can locate app/
 ENV PYTHONPATH=/app
 
+# Accept FLASK_ENV as a build argument
+ARG FLASK_ENV
+
+# Set FLASK_ENV as an environment variable inside the container
+ENV FLASK_ENV=${FLASK_ENV}
+
+# Display FLASK_ENV value during build for debugging purposes
+RUN echo "FLASK_ENV during build: $FLASK_ENV"
+
+
 # Conditionally run entrypoint.sh only if ENV is not local
 ENTRYPOINT ["/bin/bash", "/app/entrypoint.sh"]
 
