@@ -97,7 +97,13 @@ jobs:
               echo "Error: cloudformation/templates/Task_def.json file not found!"
               exit 1
           fi
+          
+      - name: Test Write Permissions
+        run: |
+          echo "Testing write permissions..."
+          echo "Test content" >> test_file.txt
 
+    
       - name: Fetch CloudFormation Export Values
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -118,7 +124,9 @@ jobs:
           sed -i "s|{placeholders_ECRRepositoryURI}|${ECRRepositoryURI}|g" cloudformation/templates/Task_def.json
           sed -i "s|{placeholders_RDSInstanceEndpoint}|${RDSInstanceEndpoint}|g" cloudformation/templates/Task_def.json
           sed -i "s|{placeholders_AWS_REGION}|${AWS_REGION}|g" cloudformation/templates/Task_def.json
-      
+
+          aws sts get-caller-identity
+          
           # Export values to GitHub environment file
           echo "TaskExecutionRoleArn=${TaskExecutionRoleArn}" >> $GITHUB_ENV
           echo "MyTaskExecutionRoleExportName=${MyTaskExecutionRoleExportName}" >> $GITHUB_ENV
@@ -126,6 +134,7 @@ jobs:
           echo "RDSInstanceEndpoint=${RDSInstanceEndpoint}" >> $GITHUB_ENV
           echo "AWS_REGION=${AWS_REGION}" >> $GITHUB_ENV
 
+          
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
