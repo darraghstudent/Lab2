@@ -120,13 +120,11 @@ jobs:
 
 
           # Replace placeholders in JSON file
-          set -x
-          sed -i "s|{placeholders_TaskExecutionRoleArn}|${TaskExecutionRoleArn}|g" cloudformation/templates/Task_def.json
-          set +x
-          sed -i "s|{placeholders_MyTaskExecutionRoleExportName}|${MyTaskExecutionRoleExportName}|g" cloudformation/templates/Task_def.json
-          sed -i "s|{placeholders_ECRRepositoryURI}|${ECRRepositoryURI}|g" cloudformation/templates/Task_def.json
-          sed -i "s|{placeholders_RDSInstanceEndpoint}|${RDSInstanceEndpoint}|g" cloudformation/templates/Task_def.json
-          sed -i "s|{placeholders_AWS_REGION}|${AWS_REGION}|g" cloudformation/templates/Task_def.json
+          sed -i "s|{TaskExecutionRoleArn}|${TaskExecutionRoleArn}|g" cloudformation/templates/Task_def.json
+          sed -i "s|{MyTaskExecutionRoleExportName}|${MyTaskExecutionRoleExportName}|g" cloudformation/templates/Task_def.json
+          sed -i "s|{ECRRepositoryURI}|${ECRRepositoryURI}|g" cloudformation/templates/Task_def.json
+          sed -i "s|{RDSInstanceEndpoint}|${RDSInstanceEndpoint}|g" cloudformation/templates/Task_def.json
+          sed -i "s|{AWS_REGION}|${AWS_REGION}|g" cloudformation/templates/Task_def.json
 
           # Print updated JSON file to logs
           echo "Updated Task_def.json:"
