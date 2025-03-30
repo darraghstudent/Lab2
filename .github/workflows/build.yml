@@ -117,11 +117,11 @@ jobs:
 
       - name: Substitute placeholders in task definition
         run: |
-          sed -i "s/{placeholders_TaskExecutionRoleArn}/${TaskExecutionRoleArn}/g" cloudformation/templates/task-def.json
-          sed -i "s/{placeholders_MyTaskExecutionRoleExportName}/${MyTaskExecutionRoleExportName}/g" cloudformation/templates/task-def.json
-          sed -i "s/{placeholders_ECRRepositoryURI}/${ECRRepositoryURI}/g" cloudformation/templates/task-def.json
-          sed -i "s/{placeholders_RDSInstanceEndpoint}/${RDSInstanceEndpoint}/g" cloudformation/templates/task-def.json
-          sed -i "s/{placeholders_AWS_REGION}/${AWS_REGION}/g" cloudformation/templates/task-def.json
+          sed -i "s/{placeholders_TaskExecutionRoleArn}/${TaskExecutionRoleArn}/g" cloudformation/templates/task_def.json
+          sed -i "s/{placeholders_MyTaskExecutionRoleExportName}/${MyTaskExecutionRoleExportName}/g" cloudformation/templates/task_def.json
+          sed -i "s/{placeholders_ECRRepositoryURI}/${ECRRepositoryURI}/g" cloudformation/templates/task_def.json
+          sed -i "s/{placeholders_RDSInstanceEndpoint}/${RDSInstanceEndpoint}/g" cloudformation/templates/task_def.json
+          sed -i "s/{placeholders_AWS_REGION}/${AWS_REGION}/g" cloudformation/templates/task_def.json
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
