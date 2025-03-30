@@ -166,7 +166,7 @@ jobs:
             --cli-input-json file://cloudformation/templates/Task_def_updated.json
 
 
-  deploy-task:
+  deploy-ecs-service:
     name: Deploy ECS Service
     runs-on: ubuntu-latest
     steps:
@@ -225,3 +225,4 @@ jobs:
               --launch-type FARGATE \
               --network-configuration "awsvpcConfiguration={subnets=[$PublicSubnetId],securityGroups=[$MySecurityGroup],assignPublicIp='ENABLED'}"
           fi
+
