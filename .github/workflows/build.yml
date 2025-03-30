@@ -131,6 +131,7 @@ jobs:
 
   deploy-Task_def:
     name: Deploy TasK Def Service
+    needs: build-and-push-ecr
     runs-on: ubuntu-latest
 
     steps:
@@ -256,6 +257,7 @@ jobs:
 
   deploy-ecs-service:
     name: Deploy ECS Service
+    needs: deploy-Task_def
     runs-on: ubuntu-latest
     steps:
       # Step 1: Checkout repository
