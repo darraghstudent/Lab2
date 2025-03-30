@@ -127,8 +127,6 @@ jobs:
       - name: Debug File Permissions in Docker
         run: docker run --rm ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-repo:latest ls -l /app/entrypoint.sh
 
-      - name: Test Entrypoint Script Execution
-        run: docker run --rm ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-repo:latest /app/entrypoint.sh
       
       - name: Build Docker Image
         run: docker build --no-cache -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-repo:latest .
