@@ -19,7 +19,6 @@ RUN chmod +x /app/entrypoint.sh
 
 RUN ls -l /app/entrypoint.sh
 
-RUN chown appuser:appuser /app/entrypoint.sh
 
 # Expose the port your Flask app uses
 EXPOSE 5000
