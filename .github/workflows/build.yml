@@ -105,13 +105,21 @@ jobs:
           AWS_REGION: ${{ secrets.AWS_REGION }}
         run: |
           echo "Fetching CloudFormation export values..."
+          
+          # Fetch export values from CloudFormation
+          MyTaskExecutionRoleExportName='MyTaskExecutionRoleExportName' # Define your export name if needed
+          TaskExecutionRoleArn=$(aws cloudformation list-exports --query "Exports[?Name=='$MyTaskExecutionRoleExportName'].Value" --output text)
+          ECRRepositoryURI=$(aws cloudformation list-exports --query "Exports[?Name=='MyECRRepositoryURIExportName'].Value" --output text)
+          RDSInstanceEndpoint=$(aws cloudformation list-exports --query "Exports[?Name=='MyRDSInstanceEndpointExportName'].Value" --output text)
+      
+          # Replace placeholders in JSON file
           sed -i "s|{placeholders_TaskExecutionRoleArn}|${TaskExecutionRoleArn}|g" cloudformation/templates/Task_def.json
           sed -i "s|{placeholders_MyTaskExecutionRoleExportName}|${MyTaskExecutionRoleExportName}|g" cloudformation/templates/Task_def.json
           sed -i "s|{placeholders_ECRRepositoryURI}|${ECRRepositoryURI}|g" cloudformation/templates/Task_def.json
           sed -i "s|{placeholders_RDSInstanceEndpoint}|${RDSInstanceEndpoint}|g" cloudformation/templates/Task_def.json
           sed -i "s|{placeholders_AWS_REGION}|${AWS_REGION}|g" cloudformation/templates/Task_def.json
-
-          # Export values to environment file
+      
+          # Export values to GitHub environment file
           echo "TaskExecutionRoleArn=${TaskExecutionRoleArn}" >> $GITHUB_ENV
           echo "MyTaskExecutionRoleExportName=${MyTaskExecutionRoleExportName}" >> $GITHUB_ENV
           echo "ECRRepositoryURI=${ECRRepositoryURI}" >> $GITHUB_ENV
