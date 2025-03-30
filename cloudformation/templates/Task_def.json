@@ -4,12 +4,12 @@
   "requiresCompatibilities": ["FARGATE"],
   "cpu": "512",
   "memory": "1024",
-  "executionRoleArn": "placeholders_TaskExecutionRoleArn",
-  "taskRoleArn": "placeholders_MyTaskExecutionRoleExportName",
+  "executionRoleArn": "TaskExecutionRoleArn",
+  "taskRoleArn": "MyTaskExecutionRoleExportName",
   "containerDefinitions": [
     {
       "name": "flask-app-container",
-      "image": "placeholders_ECRRepositoryURI",
+      "image": "ECRRepositoryURI",
       "portMappings": [
         {
           "containerPort": 5000,
@@ -20,14 +20,14 @@
         "logDriver": "awslogs",
         "options": {
           "awslogs-group": "/ecs/flask-app-service",
-          "awslogs-region": "placeholders_AWS_REGION",
+          "awslogs-region": "AWS_REGION",
           "awslogs-stream-prefix": "ecs"
         }
       },
       "environment": [
         {
           "name": "FLASK_ENV",
-          "value": "placeholders_FlaskEnv"
+          "value": "FlaskEnv"
         },
         {
           "name": "DB_USER",
@@ -35,11 +35,11 @@
         },
         {
           "name": "DB_PASSWORD",
-          "value": "placeholders_DB_PASSWORD"
+          "value": "DB_PASSWORD"
         },
         {
           "name": "DB_HOST",
-          "value": "placeholders_RDSInstanceEndpoint"
+          "value": "RDSInstanceEndpoint"
         },
         {
           "name": "DB_PORT",
