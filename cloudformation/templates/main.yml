@@ -255,9 +255,5 @@ Outputs:
     Value: !Ref MySecurityGroup
     Export:
       Name: MySecurityGroup
-  FlaskAppTaskDefinition:
-    Value: !Ref FlaskAppTaskDefinition
-    Export:
-      Name: "FlaskAppTaskDefinition"
 
 
