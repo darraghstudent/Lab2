@@ -298,7 +298,7 @@ jobs:
 
           SERVICE_EXISTS=$(aws ecs describe-services \
             --cluster $MyECSClusterName \
-            --services ${{ env.ARTIFACT_NAME }} \
+            --services FlaskAppService  \
             --query "failures" --output text)
 
           if [ -z "$SERVICE_EXISTS" ]; then
@@ -306,16 +306,16 @@ jobs:
 
             aws ecs update-service \
               --cluster $MyECSClusterName \
-              --service ${{ env.ARTIFACT_NAME }} \
-              --task-definition $FlaskAppTaskDefinition
+              --service FlaskAppService \
+              --task-definition <TASK_DEFINITION_ARN> 
 
           else
             echo "Service does not exist. Creating ECS Service..."
 
             aws ecs create-service \
               --cluster $MyECSClusterName \
-              --service-name ${{ env.ARTIFACT_NAME }} \
-              --task-definition $FlaskAppTaskDefinition \
+              --service-name FlaskAppService  \
+              --task-definition <TASK_DEFINITION_ARN> \
               --desired-count 2 \
               --launch-type FARGATE \
               --network-configuration "awsvpcConfiguration={subnets=[$PublicSubnetId],securityGroups=[$MySecurityGroup],assignPublicIp='ENABLED'}"
