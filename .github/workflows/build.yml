@@ -127,6 +127,9 @@ jobs:
       - name: Debug Local File Permissions
         run: ls -l entrypoint.sh
 
+      - name: Test Entrypoint Script Execution
+        run: docker run --rm <your-image> /app/entrypoint.sh
+
       - name: Push Docker Image to ECR
         run: |
           docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-repo:latest
