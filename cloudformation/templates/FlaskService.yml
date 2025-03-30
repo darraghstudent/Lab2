@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Flask Seervice'
+Description: 'Flask Service'
 
- FlaskAppService:
+FlaskAppService:
     Type: 'AWS::ECS::Service'
     Properties:
       Cluster: !ImportValue MyECSClusterName  # Ensure MyECSClusterName is exported correctly
@@ -15,3 +15,4 @@ Description: 'Flask Seervice'
           SecurityGroups:
             - !ImportValue MySecurityGroup
           AssignPublicIp: 'ENABLED'
+
