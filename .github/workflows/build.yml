@@ -67,7 +67,41 @@ jobs:
           capabilities: CAPABILITY_NAMED_IAM
           parameter-overrides: DBPassword=${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
 
-  deploy-task:
+  build-and-push-ecr:
+    name: Build and Push Docker Image to ECR
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get install -y jq
+          pip install pyyaml
+
+      - name: Log in to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
+          docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+
+      - name: Build Docker Image
+        run: |
+          docker build --platform=linux/amd64 -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-repo:latest .
+
+      - name: Push Docker Image to ECR
+        run: |
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-repo:latest
+
+
+  deploy-Task_def:
     name: Deploy TasK Def Service
     runs-on: ubuntu-latest
 
@@ -156,13 +190,39 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Check for New Docker Image
+        run: |
+          echo "Checking for new Docker image in ECR..."
+  
+          # Retrieve latest image digest from ECR
+          NEW_IMAGE_DIGEST=$(aws ecr describe-images \
+            --repository-name my-repo \
+            --query "imageDetails[?imageTags[0]=='latest'].imageDigest" \
+            --output text)
+          echo "New Image Digest: $NEW_IMAGE_DIGEST"
+  
+          # Retrieve current image digest from ECS task definition
+          CURRENT_IMAGE_DIGEST=$(aws ecs describe-task-definition \
+            --task-definition MyTaskDefinitionName \
+            --query "taskDefinition.containerDefinitions[0].image" \
+            --output text | cut -d '@' -f 2)
+          echo "Current Image Digest: $CURRENT_IMAGE_DIGEST"
+  
+          # Compare digests
+          if [ "$NEW_IMAGE_DIGEST" != "$CURRENT_IMAGE_DIGEST" ]; then
+            echo "Image has changed. Proceeding with Task Definition update."
+            echo "UPDATE_TASK_DEF=true" >> $GITHUB_ENV
+          else
+            echo "Image is the same. Skipping Task Definition update."
+            echo "UPDATE_TASK_DEF=false" >> $GITHUB_ENV
+          fi
 
 
       - name: Register ECS Task Definition
+        if: ${{ env.UPDATE_TASK_DEF == 'true' }}
         run: |
-          echo "Registering ECS task definition..."
+          echo "Registering new task definition..."
           aws ecs register-task-definition \
-            --region ${{ secrets.AWS_REGION }} \
             --cli-input-json file://cloudformation/templates/Task_def_updated.json
 
 
@@ -202,6 +262,7 @@ jobs:
 
       # Step 3: Deploy or Update ECS Service
       - name: Create or Update ECS Service
+        if: ${{ env.UPDATE_TASK_DEF == 'true' }}
         run: |
           echo "Checking if ECS Service exists..."
 
