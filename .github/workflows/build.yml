@@ -68,7 +68,7 @@ jobs:
           parameter-overrides: DBPassword=${{ secrets.AWS_SECRET_DB_PASSWORD_DEV }}
 
   deploy-task:
-    name: Deploy ECS Service
+    name: Deploy TasK Def Service
     runs-on: ubuntu-latest
 
     steps:
@@ -117,7 +117,9 @@ jobs:
           TaskExecutionRoleArn=$(aws cloudformation list-exports --query "Exports[?Name=='TaskExecutionRoleArn'].Value" --output text)
           ECRRepositoryURI=$(aws cloudformation list-exports --query "Exports[?Name=='ECRRepositoryURI'].Value" --output text)
           RDSInstanceEndpoint=$(aws cloudformation list-exports --query "Exports[?Name=='RDSInstanceEndpoint'].Value" --output text)
-      
+         
+
+
           # Replace placeholders in JSON file using jq
           jq \
             --arg TaskExecutionRoleArn "${TaskExecutionRoleArn}" \
@@ -164,13 +166,62 @@ jobs:
             --cli-input-json file://cloudformation/templates/Task_def_updated.json
 
 
-      - name: Update ECS Service
+  deploy-task:
+    name: Deploy ECS Service
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Checkout repository
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # Step 2: Fetch CloudFormation Export Values
+      - name: Fetch CloudFormation Export Values
         run: |
-          echo "Updating ECS Service..."
-          TASK_DEFINITION_ARN=$(aws ecs describe-task-definition \
-            --task-definition ${{ env.ARTIFACT_NAME }} \
-            --query 'taskDefinition.taskDefinitionArn' --output text)
-          aws ecs update-service \
-            --cluster ${{ env.AWS_ECS_CLUSTER_NAME }} \
-            --service ${{ env.AWS_ECS_SERVICE_NAME }} \
-            --task-definition $TASK_DEFINITION_ARN
+          echo "Fetching CloudFormation export values..."
+
+          MySecurityGroup=$(aws cloudformation list-exports --query "Exports[?Name=='MySecurityGroup'].Value" --output text)
+          PublicSubnetId=$(aws cloudformation list-exports --query "Exports[?Name=='PublicSubnetId'].Value" --output text)
+          MyECSClusterName=$(aws cloudformation list-exports --query "Exports[?Name=='MyECSClusterName'].Value" --output text)
+          FlaskAppTaskDefinition=$(aws cloudformation list-exports --query "Exports[?Name=='FlaskAppTaskDefinition'].Value" --output text)
+
+          echo "Exported CloudFormation Values:"
+          echo "MySecurityGroup=$MySecurityGroup"
+          echo "PublicSubnetId=$PublicSubnetId"
+          echo "MyECSClusterName=$MyECSClusterName"
+          echo "FlaskAppTaskDefinition=$FlaskAppTaskDefinition"
+
+          # Export variables for subsequent steps
+          echo "MySecurityGroup=${MySecurityGroup}" >> $GITHUB_ENV
+          echo "PublicSubnetId=${PublicSubnetId}" >> $GITHUB_ENV
+          echo "MyECSClusterName=${MyECSClusterName}" >> $GITHUB_ENV
+          echo "FlaskAppTaskDefinition=${FlaskAppTaskDefinition}" >> $GITHUB_ENV
+
+      # Step 3: Deploy or Update ECS Service
+      - name: Create or Update ECS Service
+        run: |
+          echo "Checking if ECS Service exists..."
+
+          SERVICE_EXISTS=$(aws ecs describe-services \
+            --cluster $MyECSClusterName \
+            --services ${{ env.ARTIFACT_NAME }} \
+            --query "failures" --output text)
+
+          if [ -z "$SERVICE_EXISTS" ]; then
+            echo "Service exists. Updating ECS Service..."
+
+            aws ecs update-service \
+              --cluster $MyECSClusterName \
+              --service ${{ env.ARTIFACT_NAME }} \
+              --task-definition $FlaskAppTaskDefinition
+
+          else
+            echo "Service does not exist. Creating ECS Service..."
+
+            aws ecs create-service \
+              --cluster $MyECSClusterName \
+              --service-name ${{ env.ARTIFACT_NAME }} \
+              --task-definition $FlaskAppTaskDefinition \
+              --desired-count 2 \
+              --launch-type FARGATE \
+              --network-configuration "awsvpcConfiguration={subnets=[$PublicSubnetId],securityGroups=[$MySecurityGroup],assignPublicIp='ENABLED'}"
+          fi
