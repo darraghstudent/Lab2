@@ -117,9 +117,12 @@ jobs:
           TaskExecutionRoleArn=$(aws cloudformation list-exports --query "Exports[?Name=='TaskExecutionRoleArn'].Value" --output text)
           ECRRepositoryURI=$(aws cloudformation list-exports --query "Exports[?Name=='ECRRepositoryURI'].Value" --output text)
           RDSInstanceEndpoint=$(aws cloudformation list-exports --query "Exports[?Name=='RDSInstanceEndpoint'].Value" --output text)
-      
+
+
           # Replace placeholders in JSON file
+          set -x
           sed -i "s|{placeholders_TaskExecutionRoleArn}|${TaskExecutionRoleArn}|g" cloudformation/templates/Task_def.json
+          set +x
           sed -i "s|{placeholders_MyTaskExecutionRoleExportName}|${MyTaskExecutionRoleExportName}|g" cloudformation/templates/Task_def.json
           sed -i "s|{placeholders_ECRRepositoryURI}|${ECRRepositoryURI}|g" cloudformation/templates/Task_def.json
           sed -i "s|{placeholders_RDSInstanceEndpoint}|${RDSInstanceEndpoint}|g" cloudformation/templates/Task_def.json
