@@ -122,12 +122,12 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build --platform=linux/amd64 -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-repo:latest .
+          docker build \
+            --platform=linux/amd64 \
+            --build-arg FLASK_ENV=${{ env.FlaskEnv }} \
+            -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-repo:latest .
 
 
-      
-      - name: Build Docker Image
-        run: docker build --no-cache -t ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-repo:latest .
 
       - name: Push Docker Image to ECR
         run: |
