@@ -96,6 +96,10 @@ jobs:
           fi
 
       - name: Fetch CloudFormation Export Values
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: "your-region" # or set dynamically
         run: |
           echo "Fetching CloudFormation export values..."
           export TaskExecutionRoleArn=$(aws cloudformation list-exports --query "Exports[?Name=='TaskExecutionRoleArn'].Value" --output text)
@@ -104,44 +108,29 @@ jobs:
           export RDSInstanceEndpoint=$(aws cloudformation list-exports --query "Exports[?Name=='RDSInstanceEndpoint'].Value" --output text)
           export AWS_REGION=$(aws cloudformation list-exports --query "Exports[?Name=='AWS_REGION'].Value" --output text)
 
-          # Validate fetched values
-          if [ -z "$TaskExecutionRoleArn" ] || [ -z "$MyTaskExecutionRoleExportName" ] || [ -z "$ECRRepositoryURI" ] || [ -z "$RDSInstanceEndpoint" ]; then
-              echo "Error: Missing required export values!"
-              exit 1
-          fi
+          # Export values to environment file
+          echo "TaskExecutionRoleArn=${TaskExecutionRoleArn}" >> $GITHUB_ENV
+          echo "MyTaskExecutionRoleExportName=${MyTaskExecutionRoleExportName}" >> $GITHUB_ENV
+          echo "ECRRepositoryURI=${ECRRepositoryURI}" >> $GITHUB_ENV
+          echo "RDSInstanceEndpoint=${RDSInstanceEndpoint}" >> $GITHUB_ENV
+          echo "AWS_REGION=${AWS_REGION}" >> $GITHUB_ENV
 
-          echo "TaskExecutionRoleArn=$TaskExecutionRoleArn"
-          echo "MyTaskExecutionRoleExportName=$MyTaskExecutionRoleExportName"
-          echo "ECRRepositoryURI=$ECRRepositoryURI"
-          echo "RDSInstanceEndpoint=$RDSInstanceEndpoint"
-          echo "AWS_REGION=$AWS_REGION"
-
-      - name: Inject Values into JSON
+      - name: Substitute placeholders in task definition
         run: |
-          echo "Injecting values into JSON..."
-          jq ".Resources.FlaskAppTaskDefinition.Properties.ExecutionRoleArn = \"$TaskExecutionRoleArn\" |
-              .Resources.FlaskAppTaskDefinition.Properties.TaskRoleArn = \"$MyTaskExecutionRoleExportName\" |
-              .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Image = \"$ECRRepositoryURI\" |
-              .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[2].Value = \"$DB_PASSWORD\" |
-              .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[3].Value = \"$RDSInstanceEndpoint\" |
-              .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].Environment[0].Value = \"$FlaskEnv\" |
-              .Resources.FlaskAppTaskDefinition.Properties.ContainerDefinitions[0].LogConfiguration.Options.\"awslogs-region\" = \"$AWS_REGION\"" \
-              cloudformation/templates/Task_def.json > cloudformation/templates/Task_def_updated.json
+          sed -i "s/{placeholders_TaskExecutionRoleArn}/${TaskExecutionRoleArn}/g" cloudformation/templates/task-def.json
+          sed -i "s/{placeholders_MyTaskExecutionRoleExportName}/${MyTaskExecutionRoleExportName}/g" cloudformation/templates/task-def.json
+          sed -i "s/{placeholders_ECRRepositoryURI}/${ECRRepositoryURI}/g" cloudformation/templates/task-def.json
+          sed -i "s/{placeholders_RDSInstanceEndpoint}/${RDSInstanceEndpoint}/g" cloudformation/templates/task-def.json
+          sed -i "s/{placeholders_AWS_REGION}/${AWS_REGION}/g" cloudformation/templates/task-def.json
 
-          echo "Values injected successfully!"
-          ls -l cloudformation/templates/
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Validate Task_def_updated.json File
-        run: |
-          echo "Validating Task_def_updated.json..."
-          if [ ! -f cloudformation/templates/Task_def_updated.json ]; then
-              echo "Error: Task_def_updated.json not found!"
-              exit 1
-          fi
-          jq empty cloudformation/templates/Task_def_updated.json || {
-              echo "Error: Invalid JSON structure in Task_def_updated.json!"
-              exit 1
-          }
+
 
       - name: Register ECS Task Definition
         run: |
