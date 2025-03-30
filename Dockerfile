@@ -5,17 +5,17 @@ WORKDIR /app
 
 # Copy dependency file and install required packages
 COPY requirements.txt requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
 
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the entrypoint script into the container
 COPY entrypoint.sh /app/entrypoint.sh
 
-# Make the entrypoint script executable
-RUN chmod +x /app/entrypoint.sh
-
 # Copy the entire project into the container
 COPY . .
+
+# Make the entrypoint script executable
+RUN chmod +x /app/entrypoint.sh
 
 # Expose the port your Flask app uses
 EXPOSE 5000
