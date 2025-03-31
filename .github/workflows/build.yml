@@ -230,7 +230,7 @@ jobs:
             echo "Found task definition: $TASK_NAME"
             echo "TASK_NAME=$TASK_NAME" >> $GITHUB_ENV
           fi
-    
+
       - name: Describe Latest Task Def
         if: ${{ env.TASK_NAME != '' }}
         run: |
