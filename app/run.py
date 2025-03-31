@@ -26,5 +26,5 @@ if __name__ == "__main__":
     
     # Start the Flask application
     logger.info("Starting the Flask app...")
-    app.run(host="0.0.0.0", port=5000, debug=(env == "development2"))
+    app.run(host="0.0.0.0", port=5000, debug=True)
 
