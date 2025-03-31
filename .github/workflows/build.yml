@@ -287,13 +287,14 @@ jobs:
           MySecurityGroup=$(aws cloudformation list-exports --query "Exports[?Name=='MySecurityGroup'].Value" --output text)
           PublicSubnetId=$(aws cloudformation list-exports --query "Exports[?Name=='PublicSubnetId'].Value" --output text)
           MyECSClusterName=$(aws cloudformation list-exports --query "Exports[?Name=='MyECSClusterName'].Value" --output text)
-          FlaskAppTaskDefinition=$(aws cloudformation list-exports --query "Exports[?Name=='FlaskAppTaskDefinition'].Value" --output text)
-
+          LATEST_TASK_DEFINITION=$(aws ecs list-task-definitions --query "taskDefinitionArns[-1]" --output text)
+          echo "Latest Task Definition ARN: $LATEST_TASK_DEFINITION"
+     
           echo "Exported CloudFormation Values:"
           echo "MySecurityGroup=$MySecurityGroup"
           echo "PublicSubnetId=$PublicSubnetId"
           echo "MyECSClusterName=$MyECSClusterName"
-          echo "FlaskAppTaskDefinition=$FlaskAppTaskDefinition"
+ 
 
           # Export variables for subsequent steps
           echo "MySecurityGroup=${MySecurityGroup}" >> $GITHUB_ENV
@@ -308,7 +309,7 @@ jobs:
       
           SERVICE_EXISTS=$(aws ecs describe-services \
             --cluster $MyECSClusterName \
-            --services FlaskAppService \
+            --services LATEST_TASK_DEFINITION \
             --query "services[?serviceName=='FlaskAppService'].serviceName" \
             --output text)
       
@@ -318,7 +319,7 @@ jobs:
             aws ecs update-service \
               --cluster $MyECSClusterName \
               --service FlaskAppService \
-              --task-definition $TASK_DEFINITION_ARN
+              --task-definition $LATEST_TASK_DEFINITION
       
           else
             echo "Service does not exist. Creating ECS Service..."
@@ -326,7 +327,7 @@ jobs:
             aws ecs create-service \
               --cluster $MyECSClusterName \
               --service-name FlaskAppService \
-              --task-definition $TASK_DEFINITION_ARN \
+              --task-definition $LATEST_TASK_DEFINITION \
               --desired-count 2 \
               --launch-type FARGATE \
               --network-configuration "awsvpcConfiguration={subnets=[$PublicSubnetId],securityGroups=[$MySecurityGroup],assignPublicIp='ENABLED'}"
