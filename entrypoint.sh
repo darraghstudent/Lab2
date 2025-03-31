@@ -3,6 +3,8 @@
 # Exit script on any error
 set -e
 
+export FLASK_ENV=development2
+
 # Debug: List contents of /app and /app/app
 echo "📂 Current contents of /app:"
 ls /app
