@@ -190,8 +190,8 @@ jobs:
           ECRRepositoryURI=$(aws cloudformation list-exports --query "Exports[?Name=='ECRRepositoryURI'].Value" --output text)
           RDSInstanceEndpoint=$(aws cloudformation list-exports --query "Exports[?Name=='RDSInstanceEndpoint'].Value" --output text)
           TaskDefinitionArns=$(aws cloudformation list-exports --query "Exports[?Name=='taskDefinitionArns'].Value" --output text)
-
-         
+        
+  
           # Replace placeholders in JSON file using jq
           jq \
             --arg TaskExecutionRoleArn "${TaskExecutionRoleArn}" \
@@ -219,43 +219,27 @@ jobs:
           echo "RDSInstanceEndpoint=${RDSInstanceEndpoint}" >> $GITHUB_ENV
           echo "AWS_REGION=${AWS_REGION}" >> $GITHUB_ENV
 
-          LATEST_TASK_DEFINITION_ARN=$(echo $TaskDefinitionArns | tr ' ' '\n' | sort | tail -n 1)
-          
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Check for New Docker Image
+      - name: Fetch Latest Task Name
         run: |
-          echo "Checking for new Docker image in ECR..."
-  
-          # Retrieve latest image digest from ECR
-          NEW_IMAGE_DIGEST=$(aws ecr describe-images \
-            --repository-name my-repo \
-            --query "imageDetails[?imageTags[0]=='latest'].imageDigest" \
-            --output text)
-          echo "New Image Digest: $NEW_IMAGE_DIGEST"
-  
-          # Retrieve current image digest from ECS task definition
-          CURRENT_IMAGE_DIGEST=$(aws ecs describe-task-definition \
-            --task-definition LATEST_TASK_DEFINITION_ARN \
-            --query "taskDefinition.containerDefinitions[0].image" \
-            --output text | cut -d '@' -f 2)
-          echo "Current Image Digest: $CURRENT_IMAGE_DIGEST"
-  
-          # Compare digests
-          if [ "$NEW_IMAGE_DIGEST" != "$CURRENT_IMAGE_DIGEST" ]; then
-            echo "Image has changed. Proceeding with Task Definition update."
-            echo "UPDATE_TASK_DEF=true" >> $GITHUB_ENV
-          else
-            echo "Image is the same. Skipping Task Definition update."
-            echo "UPDATE_TASK_DEF=false" >> $GITHUB_ENV
-          fi
+          TASK_NAME=$(aws ecs list-task-definitions --sort DESC --query "taskDefinitionArns[0]" --output text | awk -F/ '{print $NF}' | cut -d: -f1)
+          echo "TASK_NAME=$TASK_NAME" >> $GITHUB_ENV
 
+      - name: Describe Latest Task Def
+        run: |
+          echo "Task Name: $TASK_NAME"
+          aws ecs describe-task-definition --task-definition $TASK_NAME > current_task_def.json
+
+      - name: Check Task Definition Changes
+        run: |
+          echo "Comparing current and updated task definitions..."
+          if diff <(jq -S . current_task_def.json) <(jq -S . cloudformation/templates/Task_def_updated.json) > /dev/null; then
+            echo "No changes detected in task definition."
+            echo "UPDATE_TASK_DEF=false" >> $GITHUB_ENV
+          else
+            echo "Changes detected in task definition."
+            echo "UPDATE_TASK_DEF=true" >> $GITHUB_ENV
+          fi
 
       - name: Register ECS Task Definition
         if: ${{ env.UPDATE_TASK_DEF == 'true' }}
