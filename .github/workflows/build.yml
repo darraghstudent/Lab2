@@ -250,16 +250,11 @@ jobs:
           fi
 
       - name: Register ECS Task Definition
-        if: ${{ env.UPDATE_TASK_DEF == 'true' }}
+        if: ${{ env.UPDATE_TASK_DEF == 'true' || env.TASK_NAME = 'none' }}
         run: |
           echo "Registering new task definition..."
           aws ecs register-task-definition \
             --cli-input-json file://cloudformation/templates/Task_def_updated.json
-
-      - name: Handle Missing Task Definitions
-        if: ${{ env.TASK_NAME == 'none' }}
-        run: |
-          echo "No task definitions found. You may need to register a new base task definition."
 
 
   deploy-ecs-service:
