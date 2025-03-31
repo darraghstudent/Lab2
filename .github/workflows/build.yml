@@ -300,7 +300,7 @@ jobs:
           echo "MySecurityGroup=${MySecurityGroup}" >> $GITHUB_ENV
           echo "PublicSubnetId=${PublicSubnetId}" >> $GITHUB_ENV
           echo "MyECSClusterName=${MyECSClusterName}" >> $GITHUB_ENV
-          echo "FlaskAppTaskDefinition=${FlaskAppTaskDefinition}" >> $GITHUB_ENV
+          echo "LATEST_TASK_DEFINITION=${LATEST_TASK_DEFINITION}" >> $GITHUB_ENV
 
       # Step 3: Deploy or Update ECS Service
       - name: Create or Update ECS Service
