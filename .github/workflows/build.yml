@@ -237,6 +237,12 @@ jobs:
           echo "Task Name: $TASK_NAME"
           aws ecs describe-task-definition --task-definition $TASK_NAME > current_task_def.json
 
+      - name: Debug Task Definitions
+        run: |
+          echo "Listing all task definitions..."
+          aws ecs list-task-definitions --sort DESC --query "taskDefinitionArns" --output text
+
+          
       - name: Check Task Definition Changes
         if: ${{ env.TASK_NAME != 'none' }}
         run: |
