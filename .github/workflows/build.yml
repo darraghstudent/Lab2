@@ -223,8 +223,8 @@ jobs:
       - name: Fetch Latest Task Name
         run: |
           echo "Fetching latest task name..."
-          TASK_NAME=$(aws ecs list-task-definitions --sort DESC --query "taskDefinitionArns[0]" --output text 2>/dev/null || echo "")
-          if [ -z "$TASK_NAME" ]; then
+          TASK_NAME=$(aws ecs list-task-definitions --sort DESC --query "taskDefinitionArns[0]" --output text 2>/dev/null || echo "none")
+          if [ "$TASK_NAME" == "none" ]; then
             echo "No task definitions found."
           else
             echo "Found task definition: $TASK_NAME"
@@ -232,13 +232,13 @@ jobs:
           fi
 
       - name: Describe Latest Task Def
-        if: ${{ env.TASK_NAME != '' }}
+        if: ${{ env.TASK_NAME != 'none' }}
         run: |
           echo "Task Name: $TASK_NAME"
           aws ecs describe-task-definition --task-definition $TASK_NAME > current_task_def.json
 
       - name: Check Task Definition Changes
-        if: ${{ env.TASK_NAME != '' }}
+        if: ${{ env.TASK_NAME != 'none' }}
         run: |
           echo "Comparing current and updated task definitions..."
           if diff <(jq -S . current_task_def.json) <(jq -S . cloudformation/templates/Task_def_updated.json) > /dev/null; then
@@ -257,7 +257,7 @@ jobs:
             --cli-input-json file://cloudformation/templates/Task_def_updated.json
 
       - name: Handle Missing Task Definitions
-        if: ${{ env.TASK_NAME == '' }}
+        if: ${{ env.TASK_NAME == 'none' }}
         run: |
           echo "No task definitions found. You may need to register a new base task definition."
 
