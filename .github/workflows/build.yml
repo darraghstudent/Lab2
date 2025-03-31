@@ -294,7 +294,7 @@ jobs:
 
       # Step 3: Deploy or Update ECS Service
       - name: Create or Update ECS Service
-        if: ${{ env.UPDATE_TASK_DEF == 'true' }}
+        if: ${{ env.UPDATE_TASK_DEF == 'true' || env.TASK_NAME == 'none' }}
         run: |
           echo "Checking if ECS Service exists..."
       
