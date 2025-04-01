@@ -197,17 +197,21 @@ jobs:
             --arg TaskExecutionRoleArn "${TaskExecutionRoleArn}" \
             --arg MyTaskExecutionRoleExportName "${MyTaskExecutionRoleExportName}" \
             --arg ECRRepositoryURI "${ECRRepositoryURI}" \
-            --arg RDSInstanceEndpoint "${RDSInstanceEndpoint}" \
             --arg AWS_REGION "${AWS_REGION}" \
             --arg DB_PASSWORD "${DB_PASSWORD}" \
             --arg FlaskEnv "${FlaskEnv}" \
+            --arg RDSInstanceEndpoint "${RDSInstanceEndpoint}" \
             '.executionRoleArn = $TaskExecutionRoleArn |
              .taskRoleArn = $MyTaskExecutionRoleExportName |
              .containerDefinitions[0].image = $ECRRepositoryURI |
              .containerDefinitions[0].logConfiguration.options["awslogs-region"] = $AWS_REGION |
-             .containerDefinitions[0].environment += [{"name": "DB_PASSWORD", "value": $DB_PASSWORD}] |
-             .containerDefinitions[0].environment += [{"name": "FlaskEnv", "value": $FlaskEnv}] |
-             .containerDefinitions[0].environment += [{"name": "RDSInstanceEndpoint", "value": $RDSInstanceEndpoint}]' \
+             .containerDefinitions[0].environment |= map(
+                if .name == "DB_PASSWORD" then .value = $DB_PASSWORD
+                elif .name == "FLASK_ENV" then .value = $FlaskEnv
+                elif .name == "DB_HOST" then .value = $RDSInstanceEndpoint
+                else .
+                end
+              )' \
             cloudformation/templates/Task_def.json > cloudformation/templates/Task_def_updated.json
 
       
