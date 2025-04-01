@@ -265,7 +265,7 @@ jobs:
           fi
 
       - name: Register ECS Task Definition
-        if: ${{ env.UPDATE_TASK_DEF == 'true' || env.TASK_NAME == 'none' }}
+        if: ${{ env.TASK_NAME == 'none' }}
         run: |
           echo "Registering new task definition..."
           aws ecs register-task-definition \
