@@ -1,7 +1,6 @@
-import os
-import subprocess
+
 import logging  # Import logging module
-from flask import Flask
+from flask import Flask, session, redirect, url_for
 from flask_login import LoginManager
 from sqlalchemy import text, inspect
 
@@ -24,20 +23,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def create_app():
+def create_app(env="development"):
     """Application factory for creating and configuring the Flask app."""
     
     app = Flask(__name__)
-    
-    app.secret_key = os.getenv('SECRET_KEY', 'my_secret_key')
-    
-    # Load configuration
-    env = os.getenv("FLASK_ENV", "development2")  # Use environment variable or default
     app.config.from_object(config[env])
-    logger.info(f"Environment set to {env}")
-
-
-
+    app.secret_key = 'your_secret_key'  # Make sure you define a secret key!
 
     # Register blueprints
     print("🔧 Registering Blueprints...")
@@ -52,19 +43,14 @@ def create_app():
         for rule in app.url_map.iter_rules():
             if rule.endpoint.startswith(admin_bp.name + "."):
                 print(f"➡️ {rule} -> {rule.endpoint}")
-                
-    # Initialize extensions
-    db.init_app(app)
-    logger.info("Database initialized")
-
 
     # Initialize database
     try:
+        db.init_app(app)
         with app.app_context():
             db.session.execute(text("SELECT 1"))
             print(f"✅ Database connected to {app.config.get('DB_HOST', 'Unknown Host')}")
-            
-            # Check for existing tables
+
             inspector = inspect(db.engine)
             tables_exist = bool(inspector.get_table_names())
 
@@ -82,6 +68,17 @@ def create_app():
     @login_manager.user_loader
     def load_user(user_id):
         return User.query.get(int(user_id))
+
+    @app.context_processor
+    def inject_user_id():
+        """Injects the user_id from the session into all templates."""
+        from flask import session
+        return {'user_id': session.get('user_id')}
+
+    @app.route('/')
+    def index_redirect():
+        # Redirect the root URL "/" to "public.home"
+        return redirect(url_for('public.home'))
 
     logger.info("Flask-Login initialized")
 
