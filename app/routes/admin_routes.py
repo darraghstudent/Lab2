@@ -184,23 +184,9 @@ def delete_booking(booking_id):
 
 
 # Create a new course
-@admin_bp.route('/admin/courses', methods=['POST'])
-@role_required('admin')
+@admin_bp.route('/admin/create-course')
 def create_course():
-    try:
-        data = request.form
-        name = data.get("name")
-        description = data.get("description")
-        price = float(data.get("price"))
-
-        course_id = admin_service.create_course(name, description, price)
-
-        raise not_implemented
-        return f"Course created with ID {course_id}", 201
-
-    except Exception as e:
-        logger.error(f"Failed to create course: {e}", exc_info=True)
-        return render_template(error_template, error_message="Failed to create course"), 500
+    return render_template('AdminCreateCourse.html')
 
 
 @admin_bp.route('/admin/courses/<int:course_id>', methods=['PATCH'])
