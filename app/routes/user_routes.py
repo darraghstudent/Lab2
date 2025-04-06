@@ -154,7 +154,6 @@ def booking_confirmation(course_id):
     return render_template('BookingConfirmation.html', course=course)
 
 @user_bp.route('/register', methods=['GET', 'POST'])
-@role_required('customer')
 def register():
     """
     Handle user registration. Prevent logged-in users from accessing the registration page.
