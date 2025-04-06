@@ -1,4 +1,4 @@
-
+import os
 import logging  # Import logging module
 from flask import Flask, session, redirect, url_for
 from flask_login import LoginManager
@@ -27,9 +27,13 @@ def create_app():
     """Application factory for creating and configuring the Flask app."""
     
     app = Flask(__name__)
-    app.config.from_object(config[env])
-    app.secret_key = 'your_secret_key'  # Make sure you define a secret key!
+
+    app.secret_key = os.getenv('SECRET_KEY', 'my_secret_key')
+    
     env = os.getenv("FLASK_ENV", "development2") 
+    app.config.from_object(config[env])
+
+ 
 
     # Register blueprints
     print("🔧 Registering Blueprints...")
