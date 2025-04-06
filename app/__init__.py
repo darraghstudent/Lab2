@@ -23,12 +23,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def create_app(env="development"):
+def create_app():
     """Application factory for creating and configuring the Flask app."""
     
     app = Flask(__name__)
     app.config.from_object(config[env])
     app.secret_key = 'your_secret_key'  # Make sure you define a secret key!
+    env = os.getenv("FLASK_ENV", "development2") 
 
     # Register blueprints
     print("🔧 Registering Blueprints...")
