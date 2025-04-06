@@ -46,7 +46,7 @@ class DevelopmentConfig2(Config):
      SQLALCHEMY_ECHO = True  # Log SQL queries
      CREATE_DB = True  # Automatically create tables in development
 
-     Environment variables for other configurations
+     # Environment variables for other configurations
      DB_USER = os.getenv('DB_USER', 'DB_Admin')
      DB_PASSWORD = os.getenv('DB_PASSWORD', '2ZnaqSZ:')
      DB_HOST = os.getenv('DB_HOST', 'mydbinstance.endpoint.amazonaws.com')
@@ -57,7 +57,7 @@ class DevelopmentConfig2(Config):
          f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
      )
 
-      Mask the password in logs
+      # Mask the password in logs
      print(f"Connecting to database at {DB_HOST}:{DB_PORT} with user {DB_USER}")
 
 
