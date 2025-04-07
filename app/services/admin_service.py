@@ -145,35 +145,27 @@ class AdminService:
             raise RuntimeError("Error updating booking status.") from e
 
     def delete_booking(self, booking_id):
-        """Delete a booking by its ID."""
-        try:
-            # Fetch the booking
-            booking = self.get_booking(booking_id)
+            """Delete a booking by its ID."""
+            try:
+                # Fetch the booking
+                booking = self.get_booking(booking_id)
+                
+                # Delete the booking
+                self.db_session.delete(booking)
+                self.db_session.commit()
+                
+                # Optional: Log success
+                logger.info(f"Successfully deleted booking with ID: {booking_id}")
+                return True
+            except ValueError as e:
+                # Handle case where booking is not found
+                logger.warning(str(e))
+                raise
+            except Exception as e:
+                # Handle unexpected errors
+                logger.error("Failed to delete booking", exc_info=True)
+                raise RuntimeError("Error deleting booking.") from e
 
-            if not booking:
-                logger.warning(f"Booking with ID {booking_id} not found.")
-                raise ValueError(f"Booking with ID {booking_id} not found.")
-
-            # Use session.in_transaction() instead of is_active
-            # Reattach the booking if necessary (use proper session state check)
-            booking = self.db_session.merge(booking)
-
-            # Delete the booking
-            self.db_session.delete(booking)
-            self.db_session.commit()
-
-            # Optional: Log success
-            logger.info(f"Successfully deleted booking with ID: {booking_id}")
-            return True
-        except ValueError as e:
-            # Handle case where booking is not found
-            logger.warning(str(e))
-            raise
-        except Exception as e:
-            # Handle unexpected errors
-            self.db_session.rollback()  # Ensure rollback happens
-            logger.error("Failed to delete booking", exc_info=True)
-            raise RuntimeError("Error deleting booking.") from e
 
     def get_booking(self, booking_id):
         """Fetch a booking by its ID."""
