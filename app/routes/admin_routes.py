@@ -166,7 +166,6 @@ def update_subscription(booking_id):
 
 @admin_bp.route('/admin/bookings/<int:booking_id>', methods=['DELETE'])
 @role_required('admin')
-@admin_bp.route('/admin/bookings/<int:booking_id>', methods=['DELETE'])
 def delete_booking(booking_id):
     """
     Route to delete a subscription (booking).
