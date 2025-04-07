@@ -207,36 +207,32 @@ class UserService:
             self.db_session.rollback()
             logger.error(f"An error occurred while updating user with ID {user_id}: {e}", exc_info=True)
             return False, "An unexpected error occurred."
+        
+      def create_user(self, password, **kwargs):
+            """
+            Create a new user.
+            :param password: Raw password to be hashed using set_password().
+            :param kwargs: Other user fields (e.g., first_name, email).
+            :return: Tuple (success: bool, message: str)
+            """
+            try:
+                # Create a new user instance
+                new_user = User(**kwargs)
+                new_user.set_password(password)  # Use the model's set_password() method
     
-    def create_user(self, password, **kwargs):
-        """
-        Create a new user.
-        :param password: Raw password to be hashed using set_password().
-        :param kwargs: Other user fields (e.g., first_name, email).
-        :return: Tuple (success: bool, message: str)
-        """
-        try:
-            # Create a new user instance
-            user = User()
-            for key, value in kwargs.items():
-                if hasattr(user, key) and key != 'id':  # Prevent updating 'id'
-                    setattr(user, key, value)
-
-            user.set_password(password)  # Use the model's set_password() method
-
-            # Add the new user to the database
-            db.session.add(user)
-            db.session.commit()
-            logger.info(f"User {user.first_name} {user.second_name} created successfully.")
-            return True, "User created successfully."
-        except IntegrityError as e:
-            self.db_session.rollback()
-            logger.error(f"Integrity Error: {e}")
-            return False, "Email must be unique."
-        except Exception as e:
-            self.db_session.rollback()
-            logger.error(f"An error occurred while creating a new user: {e}", exc_info=True)
-            return False, "An unexpected error occurred."
+                # Add the new user to the database
+                db.session.add(new_user)
+                db.session.commit()
+                logger.info(f"User {new_user.first_name} {new_user.second_name} created successfully.")
+                return True, "User created successfully."
+            except IntegrityError as e:
+                self.db_session.rollback()
+                logger.error(f"Integrity Error: {e}")
+                return False, "Email must be unique."
+            except Exception as e:
+                self.db_session.rollback()
+                logger.error(f"An error occurred while creating a new user: {e}", exc_info=True)
+                return False, "An unexpected error occurred."
         
 
     def update_password(self, user_id, new_password):
