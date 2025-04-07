@@ -236,7 +236,6 @@ def update_user(user_id):
     
     
 @user_bp.route('/create', methods=['POST'])
-@role_required('customer')
 def create_user():
     user_service = UserService()  # Initialize the UserService
 
