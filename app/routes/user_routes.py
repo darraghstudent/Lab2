@@ -163,7 +163,7 @@ def register():
     if user_id:
         # Flash a message and redirect logged-in users
             flash("If you are already logged in proceed to course bookings page.", "error")
-            return redirect(url_for('user.create'))
+            return redirect(url_for('user.create_user'))
 
 
     # Render register page or handle user registration
