@@ -166,12 +166,14 @@ def update_subscription(booking_id):
 
 @admin_bp.route('/admin/bookings/<int:booking_id>', methods=['DELETE'])
 @role_required('admin')
+@admin_bp.route('/admin/bookings/<int:booking_id>', methods=['DELETE'])
 def delete_booking(booking_id):
     """
     Route to delete a subscription (booking).
     """
     try:
         # Call the delete_booking method in the service
+        admin_service.delete_booking(booking_id)
         
         # Redirect to the admin bookings page on success
         return redirect(url_for('admin.admin_bookings'))
@@ -181,6 +183,7 @@ def delete_booking(booking_id):
     except Exception as e:
         # Handle unexpected errors
         return jsonify({"success": False, "message": "An error occurred."}), 500
+
 
 
 # Create a new course
